@@ -96,7 +96,7 @@ export function LeadTable({
                       if (confirm(`Delete "${lead.name}"? This can't be undone.`)) onDelete(lead.id);
                     }}
                     title="Delete lead"
-                    className="rounded p-1 text-text-muted opacity-0 transition-colors hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                    className="rounded p-1 text-text-muted/70 transition-colors hover:bg-danger/10 hover:text-danger"
                   >
                     <X size={15} />
                   </button>

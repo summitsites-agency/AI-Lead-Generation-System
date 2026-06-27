@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Radar, Loader2, Square, Upload, MapPin, Briefcase } from "lucide-react";
 import type { Lead, ScanEvent } from "@/lib/types";
 import { streamScan } from "@/lib/api";
@@ -46,9 +46,14 @@ export default function ScraperPage() {
     });
   };
 
-  // Google Maps discovery needs a real browser (Playwright), so it only runs on
-  // the local app. On the hosted site this is off; Import / CSV still works.
-  const scraperEnabled = process.env.NEXT_PUBLIC_SCRAPER_ENABLED === "true";
+  // Google Maps discovery needs a real browser (Playwright), which can't run on
+  // Vercel's serverless functions. So it's enabled everywhere (localhost, etc.)
+  // and only disabled on the hosted Vercel deployment. Import / CSV works anywhere.
+  // Defaults to enabled before mount to avoid a flash of the disabled state.
+  const [scraperEnabled, setScraperEnabled] = useState(true);
+  useEffect(() => {
+    setScraperEnabled(!window.location.hostname.endsWith(".vercel.app"));
+  }, []);
 
   const canRun =
     mode === "discover"
