@@ -1,0 +1,161 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Summit Sites design system. Dark is the default (spec §3.2); add the `light`
+   class to <html> for light mode. Semantic overlay tokens (hover/fill/track/
+   overlay) adapt per theme so components don't hardcode white/black alphas.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+
+  --background: #0b0f17; /* app background */
+  --surface: #111827; /* cards / panels */
+  --surface-2: #0e1521; /* slightly raised inputs */
+  --border: #1f2937; /* subtle borders */
+  --border-strong: #2b3647;
+  --primary: #3b82f6;
+  --primary-hover: #2f6fd6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+
+  /* theme-aware overlays */
+  --hover: rgba(255, 255, 255, 0.06);
+  --fill: rgba(255, 255, 255, 0.025);
+  --fill-strong: rgba(255, 255, 255, 0.07);
+  --track: rgba(255, 255, 255, 0.09);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --card-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --skeleton-shine: rgba(255, 255, 255, 0.06);
+}
+
+:root.light {
+  color-scheme: light;
+
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: #e4e7ec;
+  --border-strong: #d3d8e0;
+  --primary: #3b82f6;
+  --primary-hover: #2f6fd6;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --text-primary: #0b0f17;
+  --text-secondary: #4b5563;
+  --text-muted: #8b95a3;
+
+  --hover: rgba(15, 23, 42, 0.05);
+  --fill: rgba(15, 23, 42, 0.025);
+  --fill-strong: rgba(15, 23, 42, 0.07);
+  --track: rgba(15, 23, 42, 0.1);
+  --overlay: rgba(15, 23, 42, 0.35);
+  --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 12px 28px -18px rgba(16, 24, 40, 0.18);
+  --skeleton-shine: rgba(15, 23, 42, 0.06);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-hover: var(--hover);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-track: var(--track);
+  --color-overlay: var(--overlay);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+
+  --radius-xl: 0.875rem;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--text-primary);
+}
+
+html {
+  transition: background-color 0.2s ease;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numbers for dense data tables / KPI figures */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom thin scrollbars to keep the analytics-terminal feel */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Soft focus glow on inputs (spec §3.10) */
+.input-glow:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+/* Subtle card border glow used on KPI cards (spec §3.6) */
+.card-glow {
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, #ffffff 4%, transparent) inset,
+    var(--card-shadow);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+  animation: shimmer 1.4s infinite;
+}
