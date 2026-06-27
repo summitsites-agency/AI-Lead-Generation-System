@@ -89,6 +89,12 @@ export async function setLeadPriority(id: number, priority: string): Promise<Lea
   return data.lead;
 }
 
+/** Permanently delete a lead. */
+export async function deleteLead(id: number): Promise<boolean> {
+  const res = await fetch(`/api/leads/${id}`, { method: "DELETE" });
+  return res.ok;
+}
+
 export async function generateOutreach(
   leadId: number,
   type: OutreachType

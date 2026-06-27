@@ -4,6 +4,7 @@ import {
   parseCount,
   parseProfileStats,
   extractProfileFromHtml,
+  extractContactFromBio,
   cleanName,
 } from "./instagram";
 
@@ -93,6 +94,22 @@ describe("extractProfileFromHtml", () => {
     const p = extractProfileFromHtml(h, "cakeoclock");
     expect(p.name).toBe("Cake O'Clock Montreal");
     expect(p.followers).toBe(8420);
+  });
+});
+
+describe("extractContactFromBio", () => {
+  it("finds an email in the bio", () => {
+    expect(extractContactFromBio("Order ☕ hello@joescoffee.com").email).toBe(
+      "hello@joescoffee.com"
+    );
+  });
+
+  it("finds a phone number in the bio", () => {
+    expect(extractContactFromBio("📞 Bookings 514-555-0192").phone).toBe("514-555-0192");
+  });
+
+  it("returns nulls when there's no contact info", () => {
+    expect(extractContactFromBio("Best espresso in town")).toEqual({ email: null, phone: null });
   });
 });
 

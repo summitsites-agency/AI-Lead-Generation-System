@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import type { Lead } from "@/lib/types";
-import { fetchLeads } from "@/lib/api";
+import { fetchLeads, deleteLead } from "@/lib/api";
 import { LeadTable } from "@/components/lead-table";
 import { LeadDrawer } from "@/components/lead-drawer";
 import { AddLead } from "@/components/add-lead";
@@ -39,6 +39,12 @@ export default function LeadsPage() {
   const onAdded = (leadId: number) => {
     load();
     setSelected(leadId);
+  };
+
+  const onDelete = async (id: number) => {
+    await deleteLead(id);
+    if (selected === id) setSelected(null);
+    load();
   };
 
   return (
@@ -88,7 +94,7 @@ export default function LeadsPage() {
         {loading ? "Loading…" : `${leads.length} lead${leads.length === 1 ? "" : "s"}`}
       </div>
 
-      <LeadTable leads={leads} loading={loading} onSelect={setSelected} />
+      <LeadTable leads={leads} loading={loading} onSelect={setSelected} onDelete={onDelete} />
 
       <LeadDrawer leadId={selected} onClose={() => setSelected(null)} onStatusChange={load} />
     </div>

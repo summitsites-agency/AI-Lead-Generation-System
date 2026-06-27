@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLead, updateLeadStatus, updateLeadPriority } from "@/lib/db/leads";
+import { getLead, updateLeadStatus, updateLeadPriority, deleteLead } from "@/lib/db/leads";
 import { listOutreach } from "@/lib/db/outreach";
 import { LEAD_STATUSES } from "@/lib/status";
 import type { LeadStatus, Priority } from "@/lib/types";
@@ -36,4 +36,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const lead = await updateLeadStatus(Number(id), body.status as LeadStatus);
   if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({ lead });
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const ok = await deleteLead(Number(id));
+  if (!ok) return NextResponse.json({ error: "not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }

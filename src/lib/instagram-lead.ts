@@ -4,6 +4,7 @@ import {
   normalizeHandle,
   profileUrl,
   scrapeInstagramProfile,
+  extractContactFromBio,
   type InstagramProfile,
   type InstagramManualInput,
 } from "@/lib/scraping/instagram";
@@ -17,6 +18,8 @@ export type InstagramLeadResult =
   | { ok: false; error: string };
 
 function profileFromManual(handle: string, m: InstagramManualInput): InstagramProfile {
+  const bio = m.bio ?? "";
+  const contact = extractContactFromBio(bio);
   return {
     handle,
     url: profileUrl(handle),
@@ -25,8 +28,11 @@ function profileFromManual(handle: string, m: InstagramManualInput): InstagramPr
     followers: m.followers ?? null,
     following: null,
     posts: m.posts ?? null,
-    bio: m.bio ?? "",
+    bio,
     externalUrl: null,
+    avatar: null,
+    email: contact.email,
+    phone: contact.phone,
   };
 }
 
@@ -54,8 +60,8 @@ export async function analyzeInstagramLead(
   const lead: NewLead = {
     name: profile.name || `@${handle}`,
     website: profileUrl(handle),
-    phone: "",
-    email: "",
+    phone: profile.phone || "",
+    email: profile.email || "",
     address: "",
     industry: manual?.niche?.trim() || "",
     location: "",
@@ -71,6 +77,16 @@ export async function analyzeInstagramLead(
     opportunities: a.opportunities,
     engine: a.engine,
     web_presence: "social",
+    meta: {
+      instagram: {
+        followers: profile.followers,
+        following: profile.following,
+        posts: profile.posts,
+        bio: profile.bio,
+        avatar: profile.avatar,
+        externalUrl: profile.externalUrl,
+      },
+    },
   };
   return { ok: true, lead: await upsertLead(lead) };
 }

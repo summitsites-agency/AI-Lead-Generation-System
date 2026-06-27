@@ -14,12 +14,20 @@ import {
   Copy,
   Check,
   Loader2,
+  AtSign,
+  RefreshCw,
 } from "lucide-react";
 import type { Lead, OutreachMessage, OutreachType, Priority } from "@/lib/types";
-import { fetchLead, generateOutreach, setLeadStatus, setLeadPriority } from "@/lib/api";
+import {
+  fetchLead,
+  generateOutreach,
+  setLeadStatus,
+  setLeadPriority,
+  analyzeInstagram,
+} from "@/lib/api";
 import { ScoreBar, PriorityBadge, Pill, Button, WebPresenceBadge } from "@/components/ui";
 import { LEAD_STATUSES, STATUS_LABEL } from "@/lib/status";
-import { displayHost, cn } from "@/lib/utils";
+import { displayHost, fmt, cn } from "@/lib/utils";
 
 const OUTREACH_TABS: { type: OutreachType; label: string }[] = [
   { type: "email", label: "Email" },
@@ -141,6 +149,20 @@ function DrawerBody({
 }) {
   const isRealSite = lead.web_presence === "site";
   const hasLink = lead.website.startsWith("http");
+  const ig = lead.meta?.instagram;
+  const igHandle =
+    lead.source === "instagram" ? lead.website.replace(/\/+$/, "").split("/").pop() ?? "" : "";
+  const [reanalyzing, setReanalyzing] = useState(false);
+
+  const reanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      const res = await analyzeInstagram(lead.website);
+      if (res.lead) onStatusChange(res.lead);
+    } finally {
+      setReanalyzing(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -169,6 +191,20 @@ function DrawerBody({
             <Pill className={lead.engine === "ai" ? "text-primary" : undefined}>
               {lead.engine === "ai" ? "AI" : "rule-based"}
             </Pill>
+            {lead.source === "instagram" && (
+              <button
+                onClick={reanalyze}
+                disabled={reanalyzing}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-text-secondary transition-colors hover:bg-hover hover:text-text-primary disabled:opacity-50"
+              >
+                {reanalyzing ? (
+                  <Loader2 size={11} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={11} />
+                )}
+                Re-analyze
+              </button>
+            )}
           </div>
         </div>
         <button onClick={onClose} className="shrink-0 text-text-muted hover:text-text-primary">
@@ -177,6 +213,69 @@ function DrawerBody({
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
+        {/* Instagram preview card */}
+        {ig && (
+          <section className="space-y-2">
+            <SectionTitle icon={<AtSign size={14} />}>Instagram profile</SectionTitle>
+            <div className="rounded-xl border border-border bg-surface-2 p-4">
+              <div className="flex items-center gap-3">
+                {ig.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={ig.avatar}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="h-14 w-14 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-fill text-text-muted">
+                    <AtSign size={20} />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="truncate font-semibold">{lead.name}</div>
+                  <a
+                    href={lead.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    @{igHandle}
+                  </a>
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <IgStat label="Followers" value={ig.followers} />
+                <IgStat label="Following" value={ig.following} />
+                <IgStat label="Posts" value={ig.posts} />
+              </div>
+
+              {ig.bio && (
+                <p className="mt-3 whitespace-pre-line text-sm text-text-secondary">{ig.bio}</p>
+              )}
+              {ig.externalUrl && (
+                <a
+                  href={ig.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 break-all text-xs text-primary hover:underline"
+                >
+                  <ExternalLink size={12} className="shrink-0" /> {ig.externalUrl}
+                </a>
+              )}
+              <a
+                href={lead.website}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-fill px-3 py-1.5 text-xs font-medium hover:bg-fill-strong"
+              >
+                <ExternalLink size={13} /> Open on Instagram
+              </a>
+            </div>
+          </section>
+        )}
+
         {/* Section 1 — Overview */}
         <section className="space-y-3">
           <SectionTitle icon={<Sparkles size={14} />}>Overview</SectionTitle>
@@ -313,6 +412,15 @@ function Metric({ label, value, suffix }: { label: string; value: number; suffix
         {label}
         {suffix && <span className="text-text-muted/70">{suffix}</span>}
       </div>
+    </div>
+  );
+}
+
+function IgStat({ label, value }: { label: string; value: number | null }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface p-2">
+      <div className="tnum text-sm font-semibold">{fmt(value)}</div>
+      <div className="text-[11px] text-text-muted">{label}</div>
     </div>
   );
 }

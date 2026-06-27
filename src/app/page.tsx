@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Radar, ArrowRight, AtSign } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import type { Stats } from "@/lib/db/leads";
-import { fetchLeads, fetchStats } from "@/lib/api";
+import { fetchLeads, fetchStats, deleteLead } from "@/lib/api";
 import { KpiCards } from "@/components/kpi-cards";
 import { LeadTable } from "@/components/lead-table";
 import { LeadDrawer } from "@/components/lead-drawer";
@@ -28,6 +28,12 @@ export default function DashboardPage() {
   };
 
   useEffect(load, []);
+
+  const onDelete = async (id: number) => {
+    await deleteLead(id);
+    if (selected === id) setSelected(null);
+    load();
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
@@ -80,7 +86,7 @@ export default function DashboardPage() {
             View all <ArrowRight size={13} />
           </Link>
         </div>
-        <LeadTable leads={leads.slice(0, 10)} loading={loading} onSelect={setSelected} />
+        <LeadTable leads={leads.slice(0, 10)} loading={loading} onSelect={setSelected} onDelete={onDelete} />
       </div>
 
       <LeadDrawer leadId={selected} onClose={() => setSelected(null)} onStatusChange={load} />

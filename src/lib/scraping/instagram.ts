@@ -14,6 +14,11 @@ export interface InstagramProfile {
   posts: number | null;
   bio: string;
   externalUrl: string | null;
+  /** profile photo URL (og:image), for the preview card */
+  avatar: string | null;
+  /** contact details pulled out of the bio, like the website scraper does */
+  email: string | null;
+  phone: string | null;
   error?: string;
 }
 
@@ -124,6 +129,22 @@ export function cleanName(raw: string): string {
   return s.replace(/\s+/g, " ").replace(/^[\s\-–—|·•]+|[\s\-–—|·•]+$/g, "").trim();
 }
 
+/** Pull an email and/or phone number out of a free-text bio (best-effort). */
+export function extractContactFromBio(bio: string): {
+  email: string | null;
+  phone: string | null;
+} {
+  const email = bio.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/)?.[0] ?? null;
+
+  let phone: string | null = null;
+  const m = bio.match(/\+?\d[\d\s().\-]{6,}\d/);
+  if (m) {
+    const digits = m[0].replace(/\D/g, "");
+    if (digits.length >= 8 && digits.length <= 15) phone = m[0].trim();
+  }
+  return { email, phone };
+}
+
 function metaContent(html: string, property: string): string {
   // Match either order of property/content attributes.
   const patterns = [
@@ -172,6 +193,11 @@ export function extractProfileFromHtml(
   const ext = html.match(/"external_url":"([^"]+)"/);
   if (ext) externalUrl = ext[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/") || null;
 
+  // Profile photo for the preview card.
+  const avatar = metaContent(html, "og:image") || null;
+
+  const contact = extractContactFromBio(bio);
+
   return {
     handle,
     url,
@@ -182,6 +208,9 @@ export function extractProfileFromHtml(
     posts: stats.posts,
     bio,
     externalUrl,
+    avatar,
+    email: contact.email,
+    phone: contact.phone,
   };
 }
 
@@ -196,6 +225,9 @@ function blocked(handle: string, error: string): InstagramProfile {
     posts: null,
     bio: "",
     externalUrl: null,
+    avatar: null,
+    email: null,
+    phone: null,
     error,
   };
 }

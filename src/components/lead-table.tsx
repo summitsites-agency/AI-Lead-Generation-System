@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { ScoreBar, PriorityBadge, Pill, WebPresenceBadge } from "@/components/ui";
 import { STATUS_DOT, STATUS_LABEL } from "@/lib/status";
@@ -10,10 +10,12 @@ export function LeadTable({
   leads,
   loading,
   onSelect,
+  onDelete,
 }: {
   leads: Lead[];
   loading?: boolean;
   onSelect: (id: number) => void;
+  onDelete?: (id: number) => void;
 }) {
   if (loading) return <TableSkeleton />;
 
@@ -38,6 +40,7 @@ export function LeadTable({
             <th className="w-48 px-4 py-2.5 font-medium">Lead score</th>
             <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Website</th>
             <th className="px-4 py-2.5 font-medium">Status</th>
+            {onDelete && <th className="w-10 px-2 py-2.5" />}
           </tr>
         </thead>
         <tbody>
@@ -85,6 +88,20 @@ export function LeadTable({
                   {STATUS_LABEL[lead.status] ?? lead.status}
                 </span>
               </td>
+              {onDelete && (
+                <td className="px-2 py-3 text-right">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Delete "${lead.name}"? This can't be undone.`)) onDelete(lead.id);
+                    }}
+                    title="Delete lead"
+                    className="rounded p-1 text-text-muted opacity-0 transition-colors hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                  >
+                    <X size={15} />
+                  </button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
