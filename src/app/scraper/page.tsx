@@ -6,6 +6,7 @@ import type { Lead, ScanEvent } from "@/lib/types";
 import { streamScan } from "@/lib/api";
 import { Button, Card, PriorityBadge } from "@/components/ui";
 import { LeadDrawer } from "@/components/lead-drawer";
+import { LeadLookup } from "@/components/lead-lookup";
 import { cn, displayHost } from "@/lib/utils";
 
 interface LogLine {
@@ -13,7 +14,13 @@ interface LogLine {
   level: "info" | "success" | "warn" | "error";
 }
 
-type Mode = "discover" | "import";
+type Mode = "discover" | "import" | "byname";
+
+const MODE_LABEL: Record<Mode, string> = {
+  discover: "Google Maps",
+  import: "Import / CSV",
+  byname: "By name",
+};
 
 const LEVEL_COLOR: Record<LogLine["level"], string> = {
   info: "text-text-secondary",
@@ -126,22 +133,29 @@ export default function ScraperPage() {
         {/* Controls */}
         <Card className="h-fit p-5">
           <div className="mb-4 flex gap-1 rounded-lg border border-border bg-surface-2 p-1">
-            {(["discover", "import"] as Mode[]).map((m) => (
+            {(["discover", "import", "byname"] as Mode[]).map((m) => (
               <button
                 key={m}
                 disabled={running}
                 onClick={() => setMode(m)}
                 className={cn(
-                  "flex-1 rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors",
+                  "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
                   mode === m ? "bg-primary text-white" : "text-text-secondary hover:text-text-primary"
                 )}
               >
-                {m === "discover" ? "Google Maps" : "Import / CSV"}
+                {MODE_LABEL[m]}
               </button>
             ))}
           </div>
 
-          {mode === "discover" ? (
+          {mode === "byname" ? (
+            <LeadLookup
+              onSaved={(lead) => {
+                setFoundLeads((prev) => [lead, ...prev.filter((l) => l.id !== lead.id)]);
+                setSelected(lead.id);
+              }}
+            />
+          ) : mode === "discover" ? (
             <div className="space-y-3">
               {!scraperEnabled && (
                 <p className="rounded-lg border border-warning/40 bg-warning/10 p-2.5 text-xs text-text-secondary">
@@ -194,6 +208,7 @@ export default function ScraperPage() {
             </Field>
           )}
 
+          {mode !== "byname" && (
           <div className="mt-4 flex gap-2">
             {running ? (
               <Button variant="danger" onClick={stop} className="flex-1">
@@ -205,6 +220,7 @@ export default function ScraperPage() {
               </Button>
             )}
           </div>
+          )}
         </Card>
 
         {/* Live output */}

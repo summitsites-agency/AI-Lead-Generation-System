@@ -9,6 +9,11 @@ export function fmt(n: number | null | undefined): string {
   return n.toLocaleString("en-US");
 }
 
+/** Lowercase, hyphenated slug for building stable keys from names. */
+export function slug(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
+}
+
 /** Normalize a possibly-bare host into an absolute http(s) URL. */
 export function normalizeUrl(raw: string): string | null {
   const v = raw.trim();

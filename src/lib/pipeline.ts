@@ -13,7 +13,7 @@ import { analyzeSite } from "@/lib/ai/analyze";
 import { analyzeWithRules } from "@/lib/ai/fallback";
 import { priorityFromScore } from "@/lib/scoring";
 import { classifyWebPresence, type WebPresence } from "@/lib/web-presence";
-import { normalizeUrl, canonicalUrl } from "@/lib/utils";
+import { normalizeUrl, canonicalUrl, slug } from "@/lib/utils";
 import { upsertLead, type NewLead } from "@/lib/db/leads";
 import { createScanJob, updateScanJob, finishScanJob } from "@/lib/db/jobs";
 
@@ -282,10 +282,6 @@ function dedupeBusinesses(list: DiscoveredBusiness[]): DiscoveredBusiness[] {
     seen.add(key);
     return true;
   });
-}
-
-function slug(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
 }
 
 function clampInt(v: string | undefined, def: number, lo: number, hi: number): number {

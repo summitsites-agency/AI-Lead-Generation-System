@@ -33,6 +33,53 @@ export async function fetchLeads(q: LeadQuery = {}): Promise<Lead[]> {
   return data.leads ?? [];
 }
 
+/** A candidate match returned by the company-name lookup. */
+export interface LookupCandidate {
+  name: string;
+  website: string;
+  phone: string;
+  email: string;
+  address: string;
+  source: string;
+  industry: string;
+  missing: string[];
+}
+
+/** Search OpenStreetMap for a company by name + city. */
+export async function lookupCompany(
+  name: string,
+  city: string
+): Promise<{ candidates?: LookupCandidate[]; error?: string }> {
+  const res = await fetch("/api/leads/lookup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "search", name, city }),
+  });
+  return res.json();
+}
+
+export interface ManualLeadInput {
+  name: string;
+  city: string;
+  website: string;
+  phone: string;
+  email: string;
+  address: string;
+  industry: string;
+}
+
+/** Save a confirmed manual-lookup lead. */
+export async function saveManualLead(
+  lead: ManualLeadInput
+): Promise<{ lead?: Lead; error?: string }> {
+  const res = await fetch("/api/leads/lookup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "save", lead }),
+  });
+  return res.json();
+}
+
 export interface InstagramManual {
   followers?: number;
   posts?: number;

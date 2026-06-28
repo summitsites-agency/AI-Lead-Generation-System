@@ -3,16 +3,19 @@ import type { DiscoveredBusiness } from "@/lib/types";
 import { mapOsmResult, type NominatimResult } from "./osm";
 
 /**
- * Fallback discovery via OpenStreetMap's Nominatim — no ToS issues, no browser.
- * OSM rarely has websites for every business, but it's a dependable backstop
- * when Google Maps returns nothing or breaks.
+ * Look up a single business by name + city via OpenStreetMap's Nominatim —
+ * pure HTTP, no browser, so it works on the hosted site. Returns candidate
+ * matches (often 0–N) for the user to pick from. The city narrows an otherwise
+ * very noisy name search.
  */
-export async function discoverViaDirectory(
-  industry: string,
-  location: string,
-  limit = 30
+export async function lookupByName(
+  name: string,
+  city: string,
+  limit = 10
 ): Promise<DiscoveredBusiness[]> {
-  const q = `${industry} ${location}`.trim();
+  const q = `${name} ${city}`.trim();
+  if (!q) return [];
+
   const url =
     `https://nominatim.openstreetmap.org/search?` +
     new URLSearchParams({
@@ -21,7 +24,7 @@ export async function discoverViaDirectory(
       addressdetails: "1",
       extratags: "1",
       namedetails: "1",
-      limit: String(Math.min(limit, 50)),
+      limit: String(Math.min(limit, 20)),
     }).toString();
 
   const res = await fetch(url, {
@@ -34,6 +37,5 @@ export async function discoverViaDirectory(
   });
   if (!res.ok) throw new Error(`Nominatim ${res.status}`);
   const results = (await res.json()) as NominatimResult[];
-
   return results.map(mapOsmResult);
 }
