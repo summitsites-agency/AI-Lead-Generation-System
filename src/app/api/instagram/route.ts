@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeInstagramLead } from "@/lib/instagram-lead";
+import { safeRoute } from "@/lib/route";
 import type { InstagramManualInput } from "@/lib/scraping/instagram";
 
 // Playwright fallback + AI call: Node runtime, never statically optimized.
@@ -13,7 +14,7 @@ export const maxDuration = 120;
  * Returns { lead } on success, { blocked: true, handle } when the profile
  * can't be read automatically, or { error } for bad input.
  */
-export async function POST(req: NextRequest) {
+export const POST = safeRoute(async (req: NextRequest) => {
   let body: { handle?: string; manual?: InstagramManualInput };
   try {
     body = (await req.json()) as typeof body;
@@ -28,4 +29,4 @@ export async function POST(req: NextRequest) {
   if (result.ok) return NextResponse.json({ lead: result.lead });
   if ("blocked" in result) return NextResponse.json({ blocked: true, handle: result.handle });
   return NextResponse.json({ error: result.error }, { status: 400 });
-}
+});

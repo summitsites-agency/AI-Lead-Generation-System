@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getLead, updateLeadStatus, updateLeadPriority, deleteLead } from "@/lib/db/leads";
 import { listOutreach } from "@/lib/db/outreach";
 import { LEAD_STATUSES } from "@/lib/status";
+import { safeRoute } from "@/lib/route";
 import type { LeadStatus, Priority } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -10,14 +11,14 @@ export const dynamic = "force-dynamic";
 const STATUSES = LEAD_STATUSES;
 const PRIORITIES: Priority[] = ["HIGH", "MEDIUM", "LOW"];
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const GET = safeRoute(async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const lead = await getLead(Number(id));
   if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({ lead, outreach: await listOutreach(lead.id) });
-}
+});
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = safeRoute(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as { status?: string; priority?: string };
 
@@ -36,11 +37,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const lead = await updateLeadStatus(Number(id), body.status as LeadStatus);
   if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({ lead });
-}
+});
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const DELETE = safeRoute(async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
   const ok = await deleteLead(Number(id));
   if (!ok) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
-}
+});

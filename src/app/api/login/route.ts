@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_COOKIE, authToken } from "@/lib/auth";
+import { safeRoute } from "@/lib/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,7 +8,7 @@ export const dynamic = "force-dynamic";
 const THIRTY_DAYS = 60 * 60 * 24 * 30;
 
 /** POST /api/login { password } — set the auth cookie on a correct password. */
-export async function POST(req: NextRequest) {
+export const POST = safeRoute(async (req: NextRequest) => {
   const password = process.env.APP_PASSWORD;
   if (!password) {
     // Auth is disabled — nothing to sign into.
@@ -28,11 +29,11 @@ export async function POST(req: NextRequest) {
     maxAge: THIRTY_DAYS,
   });
   return res;
-}
+});
 
 /** DELETE /api/login — log out by clearing the cookie. */
-export async function DELETE() {
+export const DELETE = safeRoute(async () => {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(AUTH_COOKIE, "", { path: "/", maxAge: 0 });
   return res;
-}
+});

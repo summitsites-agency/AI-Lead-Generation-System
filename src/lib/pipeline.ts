@@ -13,7 +13,7 @@ import { analyzeSite } from "@/lib/ai/analyze";
 import { analyzeWithRules } from "@/lib/ai/fallback";
 import { priorityFromScore } from "@/lib/scoring";
 import { classifyWebPresence, type WebPresence } from "@/lib/web-presence";
-import { normalizeUrl } from "@/lib/utils";
+import { normalizeUrl, canonicalUrl } from "@/lib/utils";
 import { upsertLead, type NewLead } from "@/lib/db/leads";
 import { createScanJob, updateScanJob, finishScanJob } from "@/lib/db/jobs";
 
@@ -161,7 +161,7 @@ async function processBusiness(
   if (presence === "social" || presence === "directory") {
     const kind = presence === "social" ? "social page" : "directory listing";
     emit({ type: "log", message: `${biz.name}: ${kind} only — flagging as top opportunity.` });
-    const url = normalizeUrl(biz.website) ?? biz.website;
+    const url = canonicalUrl(biz.website) || normalizeUrl(biz.website) || biz.website;
     const lead = await store(
       biz,
       url,
@@ -178,7 +178,10 @@ async function processBusiness(
   const signals: SiteSignals = await scrapeSite(biz.website);
   const analysis = await analyzeSite(signals).catch(() => analyzeWithRules(signals));
   const email = biz.email || signals.contactEmail || "";
-  const lead = await store(biz, biz.website, industry, location, biz.source, analysis, "site", email);
+  // Store the canonical URL so re-scans that surface the same site in a different
+  // form (http vs https, www, trailing slash) collapse onto one lead row.
+  const website = canonicalUrl(biz.website) || biz.website;
+  const lead = await store(biz, website, industry, location, biz.source, analysis, "site", email);
   return { lead, reachable: signals.ok };
 }
 
@@ -267,7 +270,14 @@ function noWebsiteAnalysis(): Analysis {
 function dedupeBusinesses(list: DiscoveredBusiness[]): DiscoveredBusiness[] {
   const seen = new Set<string>();
   return list.filter((b) => {
-    const key = (b.website || `name:${slug(b.name)}`).toLowerCase();
+    // Canonicalize the website so URL-form variants collapse to one key; for
+    // businesses with no website, fall back to phone (most reliable identity),
+    // then the name slug.
+    const key = b.website
+      ? canonicalUrl(b.website)
+      : b.phone
+        ? `phone:${b.phone.replace(/\D/g, "")}`
+        : `name:${slug(b.name)}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

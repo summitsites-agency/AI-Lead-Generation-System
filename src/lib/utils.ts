@@ -23,6 +23,31 @@ export function normalizeUrl(raw: string): string | null {
   }
 }
 
+/**
+ * Canonical form of a URL, used as a dedup key so the same business never
+ * produces multiple lead rows across re-scans. Collapses the differences that
+ * don't change identity: scheme (forces https), a leading `www.`, host case,
+ * a trailing slash, and any query string or fragment.
+ *
+ * `https://WWW.Acme.com/`, `http://acme.com`, and `acme.com?ref=maps` all map
+ * to `https://acme.com`. Non-http(s) keys (e.g. `nowebsite://…`) and bare hosts
+ * that can't be parsed are lowercased and returned as-is.
+ */
+export function canonicalUrl(raw: string): string {
+  const v = raw.trim();
+  if (!v) return "";
+  const normalized = normalizeUrl(v);
+  if (!normalized) return v.toLowerCase();
+  try {
+    const u = new URL(normalized);
+    const host = u.hostname.toLowerCase().replace(/^www\./, "");
+    const path = u.pathname.replace(/\/+$/, ""); // drop trailing slash(es)
+    return `https://${host}${path}`;
+  } catch {
+    return v.toLowerCase();
+  }
+}
+
 /** Short, display-friendly host from a URL. */
 export function displayHost(url: string): string {
   try {
