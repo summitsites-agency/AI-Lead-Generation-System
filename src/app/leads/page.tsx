@@ -48,7 +48,7 @@ export default function LeadsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-6">
+    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
       <AddLead onAdded={onAdded} />
 
       <div className="flex flex-wrap items-center gap-3">

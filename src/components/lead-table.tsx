@@ -35,11 +35,11 @@ export function LeadTable({
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-surface/60 text-left text-xs text-text-muted">
-            <th className="px-4 py-2.5 font-medium">Business</th>
-            <th className="hidden px-4 py-2.5 font-medium md:table-cell">Industry</th>
-            <th className="w-48 px-4 py-2.5 font-medium">Lead score</th>
-            <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Website</th>
-            <th className="px-4 py-2.5 font-medium">Status</th>
+            <th className="px-3 py-2.5 font-medium sm:px-4">Business</th>
+            <th className="hidden px-3 py-2.5 font-medium sm:px-4 md:table-cell">Industry</th>
+            <th className="w-32 px-3 py-2.5 font-medium sm:w-48 sm:px-4">Lead score</th>
+            <th className="hidden px-3 py-2.5 font-medium sm:px-4 lg:table-cell">Website</th>
+            <th className="px-3 py-2.5 font-medium sm:px-4">Status</th>
             {onDelete && <th className="w-10 px-2 py-2.5" />}
           </tr>
         </thead>
@@ -53,7 +53,7 @@ export function LeadTable({
                 lead.status === "not_a_lead" && "opacity-45"
               )}
             >
-              <td className="px-4 py-3">
+              <td className="px-3 py-3 sm:px-4">
                 <div className="flex items-center gap-2">
                   <span className="inline-block max-w-[160px] truncate align-bottom font-medium text-text-primary sm:max-w-[240px] xl:max-w-[320px]">
                     {lead.name}
@@ -65,7 +65,7 @@ export function LeadTable({
               <td className="hidden px-4 py-3 md:table-cell">
                 {lead.industry ? <Pill>{lead.industry}</Pill> : <span className="text-text-muted">—</span>}
               </td>
-              <td className="px-4 py-3">
+              <td className="px-3 py-3 sm:px-4">
                 <ScoreBar score={lead.lead_score} />
               </td>
               <td className="hidden px-4 py-3 lg:table-cell">
@@ -84,7 +84,7 @@ export function LeadTable({
                   <span className="text-warning">no site</span>
                 )}
               </td>
-              <td className="px-4 py-3">
+              <td className="px-3 py-3 sm:px-4">
                 <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
                   <span className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT[lead.status] ?? "bg-text-muted")} />
                   {STATUS_LABEL[lead.status] ?? lead.status}

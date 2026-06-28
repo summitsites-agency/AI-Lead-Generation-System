@@ -36,15 +36,15 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Lead intelligence overview</h2>
           <p className="text-sm text-text-secondary">
             Ranked opportunities from your latest scans.
           </p>
         </div>
-        <Link href="/scraper">
+        <Link href="/scraper" className="shrink-0">
           <Button>
             <Radar size={16} /> New scan
           </Button>

@@ -30,7 +30,7 @@ export default function CampaignsPage() {
   useEffect(load, [load]);
 
   return (
-    <div className="space-y-4 p-6">
+    <div className="space-y-4 p-4 sm:p-6">
       <div>
         <h2 className="text-lg font-semibold tracking-tight">Campaign pipeline</h2>
         <p className="text-sm text-text-secondary">

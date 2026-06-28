@@ -45,7 +45,7 @@ export default function SocialLeadsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-6">
+    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
       <div>
         <h2 className="text-lg font-semibold tracking-tight">Social leads</h2>
         <p className="text-sm text-text-secondary">

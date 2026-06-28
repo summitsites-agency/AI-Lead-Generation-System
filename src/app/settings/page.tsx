@@ -40,7 +40,7 @@ export default function SettingsPage() {
   const anyConnected = providers.some((p) => p.connected);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 p-6">
+    <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
       <div>
         <h2 className="text-lg font-semibold tracking-tight">AI provider</h2>
         <p className="text-sm text-text-secondary">
