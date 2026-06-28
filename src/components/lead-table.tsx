@@ -31,7 +31,7 @@ export function LeadTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-surface/60 text-left text-xs text-text-muted">
@@ -55,7 +55,9 @@ export function LeadTable({
             >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-text-primary">{lead.name}</span>
+                  <span className="inline-block max-w-[160px] truncate align-bottom font-medium text-text-primary sm:max-w-[240px] xl:max-w-[320px]">
+                    {lead.name}
+                  </span>
                   <PriorityBadge priority={lead.priority} />
                   <WebPresenceBadge presence={lead.web_presence} website={lead.website} />
                 </div>
