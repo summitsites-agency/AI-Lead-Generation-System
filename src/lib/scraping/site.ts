@@ -49,11 +49,8 @@ async function fetchOnce(url: string): Promise<SiteSignals> {
   return parseSignals(html, url, loadMs);
 }
 
-/**
- * Scrape a single website into quality signals.
- * Retries once on failure (spec §10: "Timeout → retry once").
- */
-export async function scrapeSite(url: string): Promise<SiteSignals> {
+/** Fetch one URL with a single retry (spec §10: "Timeout → retry once"). */
+async function fetchWithRetry(url: string): Promise<SiteSignals> {
   try {
     return await fetchOnce(url);
   } catch (e) {
@@ -64,4 +61,43 @@ export async function scrapeSite(url: string): Promise<SiteSignals> {
       return failed(url, msg.includes("timeout") ? "timeout" : msg.slice(0, 120));
     }
   }
+}
+
+/** Merge contact signals from an extra page into the homepage result. */
+function mergeContact(home: SiteSignals, page: SiteSignals): SiteSignals {
+  return {
+    ...home,
+    contactEmail: home.contactEmail || page.contactEmail,
+    hasContactInfo: home.hasContactInfo || page.hasContactInfo,
+    hasContactPage: home.hasContactPage || page.hasContactPage,
+  };
+}
+
+/**
+ * Scrape a website into quality signals. When the homepage yields no contact
+ * email — the asset the cold-approach flow needs — fetch up to two same-origin
+ * pages (/contact, /about) and merge their contact signals. Extra fetches are
+ * best-effort: failures leave the homepage result untouched.
+ */
+export async function scrapeSite(url: string): Promise<SiteSignals> {
+  let home = await fetchWithRetry(url);
+  if (!home.ok || home.contactEmail) return home;
+
+  let origin: string;
+  try {
+    origin = new URL(url).origin;
+  } catch {
+    return home;
+  }
+
+  for (const path of ["/contact", "/about"]) {
+    try {
+      const page = await fetchOnce(origin + path);
+      if (page.ok) home = mergeContact(home, page);
+    } catch {
+      /* ignore — best effort */
+    }
+    if (home.contactEmail) break;
+  }
+  return home;
 }
