@@ -83,9 +83,12 @@ Rejected alternatives:
 - `DiscoveredBusiness` gains `rating: number | null` and
   `reviewCount: number | null`.
 - `Lead` + `NewLead` gain `rating`, `review_count`, `value_score`, and `builder`.
-- **Migration:** add `rating REAL`, `review_count INTEGER`, `value_score INTEGER`,
-  `builder TEXT` to `leads` in `supabase/schema.sql` and the SQLite path. New
-  columns are nullable / default 0 so existing rows are unaffected.
+- **Migration:** the app is **Postgres-only** (no active SQLite path —
+  `better-sqlite3` is legacy). Add `rating REAL`, `review_count INTEGER`,
+  `value_score INTEGER`, `builder TEXT` to the `leads` table in
+  `supabase/schema.sql`, **plus idempotent `ALTER TABLE leads ADD COLUMN IF NOT
+  EXISTS ...` statements** so already-deployed databases pick the columns up.
+  New columns default to 0 / NULL so existing rows are unaffected.
 - `value_score` is **stored** (computed once at store time). `rank_score` is
   **not** a column — it's computed at sort time from the two stored scores (see
   below), so it can never drift out of sync.
