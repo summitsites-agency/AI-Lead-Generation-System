@@ -6,12 +6,12 @@ import type {
   ScanEvent,
   SiteSignals,
 } from "@/lib/types";
-import { discoverViaDirectory } from "@/lib/scraping/directory";
+import { defaultSources, runSourceChain } from "@/lib/scraping/sources";
 import { parseImport } from "@/lib/scraping/csv";
 import { scrapeSite } from "@/lib/scraping/site";
 import { analyzeSite } from "@/lib/ai/analyze";
 import { analyzeWithRules } from "@/lib/ai/fallback";
-import { priorityFromScore } from "@/lib/scoring";
+import { priorityFromScore, valueScore } from "@/lib/scoring";
 import { classifyWebPresence, type WebPresence } from "@/lib/web-presence";
 import { normalizeUrl, canonicalUrl, slug } from "@/lib/utils";
 import { upsertLead, type NewLead } from "@/lib/db/leads";
@@ -100,36 +100,10 @@ async function discover(
     return list;
   }
 
-  // Primary: real Google Maps scraping. Imported lazily so the heavy Playwright
-  // dependency only loads for discovery scans (which run locally), never on the
-  // import / manual-add path that also works on the hosted site.
-  try {
-    const { discoverViaGoogleMaps } = await import("@/lib/scraping/google-maps");
-    const list = await discoverViaGoogleMaps(industry, location, {
-      limit: req.limit,
-      onLog: (message, level) => emit({ type: "log", message, level }),
-    });
-    if (list.length) return list;
-    emit({ type: "log", level: "warn", message: "Google Maps returned nothing — trying OpenStreetMap…" });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    emit({
-      type: "log",
-      level: "warn",
-      message: `Google Maps unavailable (${msg}). Falling back to OpenStreetMap…`,
-    });
-  }
-
-  // Fallback: OpenStreetMap / Nominatim.
-  try {
-    const list = await discoverViaDirectory(industry, location, req.limit ?? 30);
-    emit({ type: "log", message: `OpenStreetMap returned ${list.length} business(es).` });
-    return list;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    emit({ type: "log", level: "error", message: `Directory fallback failed: ${msg}` });
-    return [];
-  }
+  return runSourceChain(defaultSources(), industry, location, {
+    limit: req.limit,
+    onLog: (message, level) => emit({ type: "log", message, level }),
+  });
 }
 
 async function processBusiness(
@@ -178,10 +152,18 @@ async function processBusiness(
   const signals: SiteSignals = await scrapeSite(biz.website);
   const analysis = await analyzeSite(signals).catch(() => analyzeWithRules(signals));
   const email = biz.email || signals.contactEmail || "";
-  // Store the canonical URL so re-scans that surface the same site in a different
-  // form (http vs https, www, trailing slash) collapse onto one lead row.
   const website = canonicalUrl(biz.website) || biz.website;
-  const lead = await store(biz, website, industry, location, biz.source, analysis, "site", email);
+  const lead = await store(
+    biz,
+    website,
+    industry,
+    location,
+    biz.source,
+    analysis,
+    "site",
+    email,
+    signals.builder ?? null
+  );
   return { lead, reachable: signals.ok };
 }
 
@@ -223,8 +205,11 @@ async function store(
   source: string,
   a: Analysis,
   presence: WebPresence,
-  email = ""
+  email = "",
+  builder: string | null = null
 ): Promise<Lead> {
+  const rating = biz.rating ?? null;
+  const reviewCount = biz.reviewCount ?? null;
   const lead: NewLead = {
     name: biz.name || website,
     website,
@@ -245,6 +230,10 @@ async function store(
     opportunities: a.opportunities,
     engine: a.engine,
     web_presence: presence,
+    rating,
+    review_count: reviewCount,
+    value_score: valueScore(rating, reviewCount, builder),
+    builder,
   };
   return upsertLead(lead);
 }
