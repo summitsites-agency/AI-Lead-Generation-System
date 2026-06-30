@@ -130,7 +130,7 @@ export interface LeadFilter {
   status?: LeadStatus;
   industry?: string;
   search?: string;
-  sort?: "rank" | "score" | "recent" | "name";
+  sort?: "rank" | "score" | "recent" | "name" | "status";
   /** hide leads marked "not_a_lead" (used by dashboard/campaigns) */
   hideDisqualified?: boolean;
   /** filter by web presence; "no_site" = anything that isn't a real site */
@@ -164,7 +164,10 @@ export async function listLeads(filter: LeadFilter = {}): Promise<Lead[]> {
         ? sql`created_at DESC`
         : filter.sort === "score"
           ? sql`lead_score DESC`
-          : sql`lead_score * COALESCE(value_score, 50) DESC`;
+          : filter.sort === "status"
+            ? // Group by pipeline stage (new → … → not_a_lead), best score first within a stage.
+              sql`CASE status WHEN 'new' THEN 0 WHEN 'contacted' THEN 1 WHEN 'responded' THEN 2 WHEN 'won' THEN 3 WHEN 'lost' THEN 4 ELSE 5 END, lead_score DESC`
+            : sql`lead_score * COALESCE(value_score, 50) DESC`;
 
   const rows = await sql<LeadRow[]>`SELECT * FROM leads ${where} ORDER BY ${order}`;
   return rows.map(rowToLead);

@@ -14,6 +14,7 @@ const PRIORITIES = ["", "HIGH", "MEDIUM", "LOW"] as const;
 const SORTS = [
   { value: "rank", label: "Best leads" },
   { value: "score", label: "Score" },
+  { value: "status", label: "Status" },
   { value: "recent", label: "Recent" },
   { value: "name", label: "Name" },
 ];
