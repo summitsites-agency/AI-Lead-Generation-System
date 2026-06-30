@@ -28,21 +28,21 @@ const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
 const PHONE_RE = /(\+?\d[\d\s().-]{7,}\d)/;
 
 /**
- * Best-effort site-builder / CMS detection from raw HTML markup. Checks the most
- * reliable fingerprints (asset hosts, generator tag, well-known paths). Order
- * matters — more specific platforms are checked before generic ones.
+ * Best-effort site-builder / CMS detection from raw HTML markup. Matches only on
+ * reliable fingerprints — asset/CDN hosts, the generator tag, and well-known
+ * build paths — and deliberately avoids bare brand domains (e.g. "wix.com"),
+ * which produce false positives when a hand-coded site merely links to them.
+ * Order matters — more specific platforms are checked before generic ones.
  */
 export function detectBuilder(html: string): string | null {
   const h = html.toLowerCase();
   if (h.includes("wp-content") || h.includes("wp-includes") || /generator["'][^>]*wordpress/i.test(html))
     return "WordPress";
-  if (h.includes("static.parastorage.com") || h.includes("_wixcss") || h.includes("wix.com"))
-    return "Wix";
-  if (h.includes("squarespace-cdn.com") || h.includes("static1.squarespace.com") || h.includes("squarespace.com"))
-    return "Squarespace";
+  if (h.includes("static.parastorage.com") || h.includes("_wixcss")) return "Wix";
+  if (h.includes("squarespace-cdn.com") || h.includes("static1.squarespace.com")) return "Squarespace";
   if (h.includes("cdn.shopify.com") || h.includes("myshopify.com")) return "Shopify";
-  if (h.includes("img1.wsimg.com") || h.includes("godaddy")) return "GoDaddy";
-  if (h.includes("weebly.com") || h.includes("editmysite.com")) return "Weebly";
+  if (h.includes("img1.wsimg.com")) return "GoDaddy";
+  if (h.includes("editmysite.com") || h.includes(".weebly.com")) return "Weebly";
   if (h.includes("webflow.io") || h.includes("assets.website-files.com")) return "Webflow";
   return null;
 }

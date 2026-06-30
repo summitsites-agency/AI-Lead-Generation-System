@@ -92,6 +92,7 @@ export async function scrapeSite(url: string): Promise<SiteSignals> {
 
   for (const path of ["/contact", "/about"]) {
     try {
+      // Sub-pages skip the retry — best-effort enrichment only.
       const page = await fetchOnce(origin + path);
       if (page.ok) home = mergeContact(home, page);
     } catch {
