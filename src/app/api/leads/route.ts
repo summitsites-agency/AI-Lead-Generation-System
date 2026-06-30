@@ -13,7 +13,7 @@ export const GET = safeRoute(async (req: NextRequest) => {
     status: (sp.get("status") as LeadStatus) || undefined,
     industry: sp.get("industry") || undefined,
     search: sp.get("search") || undefined,
-    sort: (sp.get("sort") as LeadFilter["sort"]) || "score",
+    sort: (sp.get("sort") as LeadFilter["sort"]) || "rank",
     hideDisqualified: sp.get("hideDisqualified") === "1",
     presence: (sp.get("presence") as LeadFilter["presence"]) || undefined,
   };

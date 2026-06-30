@@ -8,9 +8,11 @@ import { LeadTable } from "@/components/lead-table";
 import { LeadDrawer } from "@/components/lead-drawer";
 import { AddLead } from "@/components/add-lead";
 import { cn } from "@/lib/utils";
+import { STATUS_LABEL, LEAD_STATUSES } from "@/lib/status";
 
 const PRIORITIES = ["", "HIGH", "MEDIUM", "LOW"] as const;
 const SORTS = [
+  { value: "rank", label: "Best leads" },
   { value: "score", label: "Score" },
   { value: "recent", label: "Recent" },
   { value: "name", label: "Name" },
@@ -21,15 +23,16 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<number | null>(null);
   const [priority, setPriority] = useState<string>("");
-  const [sort, setSort] = useState("score");
+  const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("rank");
   const [search, setSearch] = useState("");
 
   const load = useCallback(() => {
     setLoading(true);
-    fetchLeads({ priority, sort, search })
+    fetchLeads({ priority, status, sort, search })
       .then(setLeads)
       .finally(() => setLoading(false));
-  }, [priority, sort, search]);
+  }, [priority, status, sort, search]);
 
   useEffect(() => {
     const t = setTimeout(load, search ? 250 : 0);
@@ -76,6 +79,19 @@ export default function LeadsPage() {
             </button>
           ))}
         </div>
+
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="input-glow h-9 rounded-lg border border-border bg-surface-2 px-3 text-sm"
+        >
+          <option value="">All statuses</option>
+          {LEAD_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {STATUS_LABEL[s]}
+            </option>
+          ))}
+        </select>
 
         <select
           value={sort}

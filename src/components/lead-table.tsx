@@ -4,7 +4,7 @@ import { ExternalLink, X } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { ScoreBar, PriorityBadge, Pill, WebPresenceBadge } from "@/components/ui";
 import { STATUS_DOT, STATUS_LABEL } from "@/lib/status";
-import { displayHost, cn } from "@/lib/utils";
+import { displayHost, fmt, cn } from "@/lib/utils";
 
 export function LeadTable({
   leads,
@@ -37,6 +37,7 @@ export function LeadTable({
           <tr className="border-b border-border bg-surface/60 text-left text-xs text-text-muted">
             <th className="px-3 py-2.5 font-medium sm:px-4">Business</th>
             <th className="hidden px-3 py-2.5 font-medium sm:px-4 md:table-cell">Industry</th>
+            <th className="hidden px-3 py-2.5 font-medium sm:px-4 lg:table-cell">Demand</th>
             <th className="w-32 px-3 py-2.5 font-medium sm:w-48 sm:px-4">Lead score</th>
             <th className="hidden px-3 py-2.5 font-medium sm:px-4 lg:table-cell">Website</th>
             <th className="px-3 py-2.5 font-medium sm:px-4">Status</th>
@@ -64,6 +65,16 @@ export function LeadTable({
               </td>
               <td className="hidden px-4 py-3 md:table-cell">
                 {lead.industry ? <Pill>{lead.industry}</Pill> : <span className="text-text-muted">—</span>}
+              </td>
+              <td className="hidden px-4 py-3 lg:table-cell">
+                {lead.rating != null ? (
+                  <span className="tnum whitespace-nowrap text-xs text-text-secondary">
+                    {lead.rating.toFixed(1)} <span className="text-warning">★</span>
+                    <span className="text-text-muted"> · {fmt(lead.review_count)}</span>
+                  </span>
+                ) : (
+                  <span className="text-text-muted">—</span>
+                )}
               </td>
               <td className="px-3 py-3 sm:px-4">
                 <ScoreBar score={lead.lead_score} />
