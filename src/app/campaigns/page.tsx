@@ -38,11 +38,11 @@ export default function CampaignsPage() {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 md:grid md:snap-none md:grid-cols-3 md:overflow-visible md:pb-0 xl:grid-cols-5">
         {COLUMNS.map((col) => {
           const items = leads.filter((l) => l.status === col.status);
           return (
-            <div key={col.status} className="rounded-xl border border-border bg-surface/40">
+            <div key={col.status} className="w-[80%] shrink-0 snap-center rounded-xl border border-border bg-surface/40 sm:w-[45%] md:w-auto md:shrink">
               <div className="flex items-center justify-between border-b border-border px-3 py-2">
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <span className="h-2 w-2 rounded-full" style={{ background: col.accent }} />

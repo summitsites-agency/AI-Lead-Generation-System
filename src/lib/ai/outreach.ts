@@ -3,29 +3,18 @@ import type { Lead, OutreachType } from "@/lib/types";
 import { chat } from "./client";
 import { displayHost } from "@/lib/utils";
 
-const LABEL: Record<OutreachType, string> = {
-  email: "cold email",
-  sms: "SMS text message",
-  followup: "short follow-up message",
-};
-
 function buildPrompt(lead: Lead, type: OutreachType): string {
   const issues = lead.issues.length ? lead.issues.join("; ") : lead.ai_summary;
-  const constraints =
-    type === "sms"
-      ? "- Under 320 characters\n- One concrete issue + soft CTA"
-      : type === "followup"
-        ? "- 2-3 sentences\n- Polite nudge referencing the original note"
-        : "- 4-6 sentences max\n- No hype language\n- Reference real issues found on the site\n- Soft CTA only";
+  const channel = type === "sms" ? "SMS" : type === "followup" ? "follow-up message" : "email";
+  return `I build websites and I am contacting a lead. Draft a ${channel} using NEPQ. Keep it short.
 
-  return `Write a ${LABEL[type]} from a web design agency (Summit Sites) to a local business.
-Requirements:
-${constraints}
-- Plain text only, ready to send. No subject line unless it's an email (then prefix one "Subject:" line).
+NEPQ approach: stay calm and consultative, lead with curiosity, ask situation/problem-aware questions that get them to notice the gap themselves, no hype, no hard pitch, end with a soft low-pressure next step.
 
-Business Name: ${lead.name}
+Business name: ${lead.name}
 Website: ${lead.website}
-Issues found: ${issues}`;
+Real issues I found on their site (weave in naturally, don't list them robotically): ${issues}
+
+Plain text only, ready to send.${type === "email" ? ' Begin with one "Subject:" line.' : ""}`;
 }
 
 /** Templated fallback used when no AI key is configured / the call fails. */
