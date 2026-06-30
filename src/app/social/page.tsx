@@ -10,6 +10,7 @@ import { AddInstagramLead } from "@/components/add-instagram-lead";
 
 const SORTS = [
   { value: "score", label: "Score" },
+  { value: "status", label: "Status" },
   { value: "recent", label: "Recent" },
   { value: "name", label: "Name" },
 ];
