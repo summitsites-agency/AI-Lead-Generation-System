@@ -24,6 +24,10 @@ export interface DiscoveredBusiness {
   email: string;
   address: string;
   source: string;
+  /** Google rating 0–5, when the source provides it. */
+  rating?: number | null;
+  /** Number of ratings/reviews, when the source provides it. */
+  reviewCount?: number | null;
 }
 
 /** Raw signals extracted from a business's website. */
