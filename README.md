@@ -45,13 +45,19 @@ Set `AI_PROVIDER` to pick the default, or switch live on the **Settings** page.
 
 ## How discovery works
 
-1. **Google Maps** (primary) — Playwright scrapes businesses for `industry in location`,
-   pulling name, website, phone and address.
-2. **OpenStreetMap** (fallback) — used automatically if Maps returns nothing.
-3. **Import** — paste URLs (one per line) or a CSV (`name,website,phone,email`).
+1. **Google Places API** (primary, opt-in) — set `GOOGLE_PLACES_API_KEY` to use the
+   official API: structured website/phone/**rating/review-count**, works on the hosted
+   site, and won't break when Google changes its HTML. Skipped automatically when the
+   key is absent.
+2. **Google Maps** (Playwright) — used when no Places key is set; scrapes businesses
+   for `industry in location` locally, pulling name, website, phone and address.
+3. **OpenStreetMap** (fallback) — used automatically if the above return nothing.
+4. **Import** — paste URLs (one per line) or a CSV (`name,website,phone,email`).
 
-Businesses with no website — or only a Facebook/Instagram page — are flagged as
-**high-opportunity** new-build leads.
+Leads are ranked by **opportunity × demand** — a worse website scores higher, scaled by
+how busy the business is (reviews × rating), so a popular business with a weak site rises
+to the top. Businesses with no website — or only a Facebook/Instagram page — are flagged
+as **high-opportunity** new-build leads.
 
 ## Scripts
 
