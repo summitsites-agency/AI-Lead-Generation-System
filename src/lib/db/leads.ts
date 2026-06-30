@@ -189,6 +189,13 @@ export async function updateLeadPriority(id: number, priority: Priority): Promis
   return getLead(id);
 }
 
+/** Update a lead's industry label (used to clean up the analytics breakdown). */
+export async function updateLeadIndustry(id: number, industry: string): Promise<Lead | null> {
+  const sql = getSql();
+  await sql`UPDATE leads SET industry = ${industry} WHERE id = ${id}`;
+  return getLead(id);
+}
+
 /** Permanently delete a lead (its outreach messages cascade-delete). */
 export async function deleteLead(id: number): Promise<boolean> {
   const sql = getSql();

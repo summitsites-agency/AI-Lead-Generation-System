@@ -136,6 +136,17 @@ export async function setLeadPriority(id: number, priority: string): Promise<Lea
   return data.lead;
 }
 
+/** Update a lead's industry label. */
+export async function setLeadIndustry(id: number, industry: string): Promise<Lead> {
+  const res = await fetch(`/api/leads/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ industry }),
+  });
+  const data = await res.json();
+  return data.lead;
+}
+
 /** Permanently delete a lead. */
 export async function deleteLead(id: number): Promise<boolean> {
   const res = await fetch(`/api/leads/${id}`, { method: "DELETE" });

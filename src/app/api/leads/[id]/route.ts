@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getLead, updateLeadStatus, updateLeadPriority, deleteLead } from "@/lib/db/leads";
+import { getLead, updateLeadStatus, updateLeadPriority, updateLeadIndustry, deleteLead } from "@/lib/db/leads";
 import { listOutreach } from "@/lib/db/outreach";
 import { LEAD_STATUSES } from "@/lib/status";
 import { safeRoute } from "@/lib/route";
@@ -20,13 +20,19 @@ export const GET = safeRoute(async (_req: NextRequest, { params }: { params: Pro
 
 export const PATCH = safeRoute(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
-  const body = (await req.json().catch(() => ({}))) as { status?: string; priority?: string };
+  const body = (await req.json().catch(() => ({}))) as { status?: string; priority?: string; industry?: string };
 
   if (body.priority !== undefined) {
     if (!PRIORITIES.includes(body.priority as Priority)) {
       return NextResponse.json({ error: "invalid priority" }, { status: 400 });
     }
     const lead = await updateLeadPriority(Number(id), body.priority as Priority);
+    if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json({ lead });
+  }
+
+  if (body.industry !== undefined) {
+    const lead = await updateLeadIndustry(Number(id), String(body.industry).trim());
     if (!lead) return NextResponse.json({ error: "not found" }, { status: 404 });
     return NextResponse.json({ lead });
   }

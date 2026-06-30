@@ -23,6 +23,7 @@ import {
   generateOutreach,
   setLeadStatus,
   setLeadPriority,
+  setLeadIndustry,
   analyzeInstagram,
 } from "@/lib/api";
 import { ScoreBar, PriorityBadge, Pill, Button, WebPresenceBadge } from "@/components/ui";
@@ -294,6 +295,17 @@ function DrawerBody({
           {lead.ai_summary && (
             <p className="text-sm leading-relaxed text-text-secondary">{lead.ai_summary}</p>
           )}
+          {(lead.rating != null || lead.builder) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {lead.rating != null && (
+                <span className="tnum inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 text-text-secondary">
+                  <span className="text-warning">★</span> {lead.rating.toFixed(1)}
+                  <span className="text-text-muted">· {fmt(lead.review_count)} reviews</span>
+                </span>
+              )}
+              {lead.builder && <Pill>Built on {lead.builder}</Pill>}
+            </div>
+          )}
           <ContactRow lead={lead} />
         </section>
 
@@ -339,6 +351,7 @@ function DrawerBody({
 
       {/* Footer — priority + status */}
       <div className="space-y-2 border-t border-border p-3">
+        <IndustryEditor lead={lead} onSaved={onStatusChange} />
         <div className="flex items-center gap-2">
           <span className="w-14 shrink-0 text-xs text-text-muted">Priority</span>
           <div className="flex items-center gap-1">
@@ -391,6 +404,43 @@ function DrawerBody({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function IndustryEditor({ lead, onSaved }: { lead: Lead; onSaved: (l: Lead) => void }) {
+  const [value, setValue] = useState(lead.industry);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(lead.industry);
+  }, [lead.id, lead.industry]);
+
+  const save = async () => {
+    const v = value.trim();
+    if (v === lead.industry) return;
+    setSaving(true);
+    try {
+      onSaved(await setLeadIndustry(lead.id, v));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-14 shrink-0 text-xs text-text-muted">Industry</span>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        placeholder="e.g. roofing"
+        className="input-glow h-8 flex-1 rounded-md border border-border bg-surface-2 px-2 text-xs"
+      />
+      {saving && <Loader2 size={12} className="animate-spin text-text-muted" />}
     </div>
   );
 }
