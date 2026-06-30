@@ -22,6 +22,10 @@ interface LeadRow {
   issues: string;
   opportunities: string;
   engine: string;
+  rating: number | null;
+  review_count: number | null;
+  value_score: number | null;
+  builder: string | null;
   web_presence: string;
   priority_locked: number;
   meta: string | null;
@@ -37,6 +41,7 @@ function rowToLead(r: LeadRow): Lead {
     web_presence: (r.web_presence as WebPresence) || "site",
     priority_locked: !!r.priority_locked,
     meta: parseMeta(r.meta),
+    value_score: r.value_score ?? 50,
     issues: safeJson(r.issues),
     opportunities: safeJson(r.opportunities),
   };
@@ -61,8 +66,15 @@ function safeJson(s: string): string[] {
   }
 }
 
-export type NewLead = Omit<Lead, "id" | "created_at" | "priority_locked" | "meta"> & {
+export type NewLead = Omit<
+  Lead,
+  "id" | "created_at" | "priority_locked" | "meta" | "rating" | "review_count" | "value_score" | "builder"
+> & {
   meta?: LeadMeta | null;
+  rating?: number | null;
+  review_count?: number | null;
+  value_score?: number;
+  builder?: string | null;
 };
 
 /** Insert a lead, or update the existing row for the same website (re-scan). */
@@ -89,6 +101,10 @@ export async function upsertLead(lead: NewLead): Promise<Lead> {
     engine: lead.engine,
     web_presence: lead.web_presence,
     meta: lead.meta ? JSON.stringify(lead.meta) : null,
+    rating: lead.rating ?? null,
+    review_count: lead.review_count ?? null,
+    value_score: lead.value_score ?? 50,
+    builder: lead.builder ?? null,
   };
   const rows = await sql<LeadRow[]>`
     INSERT INTO leads ${sql(row)}
@@ -101,7 +117,9 @@ export async function upsertLead(lead: NewLead): Promise<Lead> {
       priority = CASE WHEN leads.priority_locked = 1 THEN leads.priority ELSE excluded.priority END,
       ai_summary = excluded.ai_summary, issues = excluded.issues,
       opportunities = excluded.opportunities, engine = excluded.engine,
-      web_presence = excluded.web_presence, meta = excluded.meta
+      web_presence = excluded.web_presence, meta = excluded.meta,
+      rating = excluded.rating, review_count = excluded.review_count,
+      value_score = excluded.value_score, builder = excluded.builder
     RETURNING *
   `;
   return rowToLead(rows[0]);
@@ -112,7 +130,7 @@ export interface LeadFilter {
   status?: LeadStatus;
   industry?: string;
   search?: string;
-  sort?: "score" | "recent" | "name";
+  sort?: "rank" | "score" | "recent" | "name";
   /** hide leads marked "not_a_lead" (used by dashboard/campaigns) */
   hideDisqualified?: boolean;
   /** filter by web presence; "no_site" = anything that isn't a real site */
@@ -144,7 +162,9 @@ export async function listLeads(filter: LeadFilter = {}): Promise<Lead[]> {
       ? sql`name ASC`
       : filter.sort === "recent"
         ? sql`created_at DESC`
-        : sql`lead_score DESC`;
+        : filter.sort === "score"
+          ? sql`lead_score DESC`
+          : sql`lead_score * COALESCE(value_score, 50) DESC`;
 
   const rows = await sql<LeadRow[]>`SELECT * FROM leads ${where} ORDER BY ${order}`;
   return rows.map(rowToLead);

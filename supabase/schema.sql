@@ -26,6 +26,10 @@ create table if not exists leads (
   issues text default '[]',
   opportunities text default '[]',
   engine text default 'fallback',
+  rating real,
+  review_count integer,
+  value_score integer,
+  builder text,
   web_presence text not null default 'site',
   priority_locked integer not null default 0,
   meta text,
@@ -34,6 +38,11 @@ create table if not exists leads (
 
 -- A website should only ever produce one lead row.
 create unique index if not exists idx_leads_website on leads (website);
+-- New demand/value columns (idempotent for existing deployments).
+alter table leads add column if not exists rating real;
+alter table leads add column if not exists review_count integer;
+alter table leads add column if not exists value_score integer;
+alter table leads add column if not exists builder text;
 create index if not exists idx_leads_priority on leads (priority);
 create index if not exists idx_leads_status on leads (status);
 create index if not exists idx_leads_web_presence on leads (web_presence);

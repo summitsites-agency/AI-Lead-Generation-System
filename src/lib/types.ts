@@ -103,6 +103,14 @@ export interface Lead {
   issues: string[];
   opportunities: string[];
   engine: "ai" | "fallback";
+  /** Google rating 0–5, or null when unknown. */
+  rating: number | null;
+  /** Number of reviews, or null when unknown. */
+  review_count: number | null;
+  /** Business-value score 0–100 (reviews × rating, baseline 50 when unknown). */
+  value_score: number;
+  /** Detected site builder / CMS, or null. */
+  builder: string | null;
   /** what kind of web presence the business has (drives the new-build section) */
   web_presence: WebPresence;
   /** true once the user manually set the priority — protects it from re-scoring */
