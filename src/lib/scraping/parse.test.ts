@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseSignals } from "./parse";
+import { parseSignals, detectBuilder } from "./parse";
 
 const GOOD = `<!doctype html><html><head>
   <title>Acme Roofing — Montreal's Trusted Roofers</title>
@@ -41,5 +41,24 @@ describe("parseSignals", () => {
     expect(s.hasContactInfo).toBe(false);
     expect(s.hasContactPage).toBe(false);
     expect(s.headings).toEqual([]);
+  });
+});
+
+describe("detectBuilder", () => {
+  it("detects common builders from markup", () => {
+    expect(detectBuilder(`<link href="/wp-content/themes/x/style.css">`)).toBe("WordPress");
+    expect(detectBuilder(`<script src="https://static.parastorage.com/x.js"></script>`)).toBe("Wix");
+    expect(detectBuilder(`<div class="sqs-block">`.concat("squarespace-cdn.com"))).toBe("Squarespace");
+    expect(detectBuilder(`<script src="https://cdn.shopify.com/s/x.js">`)).toBe("Shopify");
+    expect(detectBuilder(`<img src="https://img1.wsimg.com/x.png">`)).toBe("GoDaddy");
+  });
+
+  it("returns null when no builder markers are present", () => {
+    expect(detectBuilder(`<html><body><h1>Hand coded</h1></body></html>`)).toBeNull();
+  });
+
+  it("is surfaced on parsed signals", () => {
+    const html = `<!doctype html><html><head><title>x</title></head><body><link href="/wp-includes/x.css"></body></html>`;
+    expect(parseSignals(html, "https://x.test", 100).builder).toBe("WordPress");
   });
 });

@@ -47,6 +47,8 @@ export interface SiteSignals {
   /** time to download the HTML, ms */
   loadMs: number;
   bytes: number;
+  /** Detected site builder / CMS (e.g. "Wix", "WordPress"), or null. */
+  builder?: string | null;
 }
 
 /** Structured analysis returned by the AI module (or the rule-based fallback). */
