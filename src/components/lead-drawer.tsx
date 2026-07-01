@@ -26,7 +26,7 @@ import {
   setLeadIndustry,
   analyzeInstagram,
 } from "@/lib/api";
-import { ScoreBar, PriorityBadge, Pill, Button, WebPresenceBadge } from "@/components/ui";
+import { ScoreBar, PriorityBadge, Pill, Button, WebPresenceBadge, useIsMobile } from "@/components/ui";
 import { LEAD_STATUSES, STATUS_LABEL } from "@/lib/status";
 import { displayHost, fmt, cn } from "@/lib/utils";
 
@@ -76,6 +76,7 @@ export function LeadDrawer({
   }, [onClose]);
 
   const open = leadId != null;
+  const mobile = useIsMobile();
 
   return (
     <AnimatePresence>
@@ -90,10 +91,15 @@ export function LeadDrawer({
             onClick={onClose}
           />
           <motion.aside
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col border-l border-border bg-surface shadow-2xl"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            className={cn(
+              "fixed z-50 flex flex-col border-border bg-surface shadow-2xl",
+              mobile
+                ? "inset-x-0 bottom-0 max-h-[92vh] rounded-t-2xl border-t pb-safe"
+                : "inset-y-0 right-0 w-full max-w-xl border-l"
+            )}
+            initial={mobile ? { y: "100%" } : { x: "100%" }}
+            animate={mobile ? { y: 0 } : { x: 0 }}
+            exit={mobile ? { y: "100%" } : { x: "100%" }}
             transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
           >
             {loading || !lead ? (
@@ -120,6 +126,9 @@ export function LeadDrawer({
 function DrawerSkeleton({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex h-full flex-col">
+      <div className="flex shrink-0 justify-center py-2 md:hidden">
+        <div className="h-1.5 w-10 rounded-full bg-border-strong" />
+      </div>
       <div className="flex items-center justify-between border-b border-border p-4">
         <div className="skeleton h-5 w-40 rounded" />
         <button onClick={onClose} className="text-text-muted hover:text-text-primary">
@@ -167,6 +176,9 @@ function DrawerBody({
 
   return (
     <div className="flex h-full flex-col">
+      <div className="flex shrink-0 justify-center py-2 md:hidden">
+        <div className="h-1.5 w-10 rounded-full bg-border-strong" />
+      </div>
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
         <div className="min-w-0">
@@ -362,7 +374,7 @@ function DrawerBody({
                   key={p}
                   onClick={async () => onStatusChange(await setLeadPriority(lead.id, p))}
                   className={cn(
-                    "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
+                    "rounded-md border px-3 py-2 text-xs font-medium transition-colors",
                     active ? PRIORITY_ACTIVE[p] : "border-border text-text-secondary hover:bg-hover"
                   )}
                 >
@@ -387,7 +399,7 @@ function DrawerBody({
                 onClick={async () => onStatusChange(await setLeadStatus(lead.id, s))}
                 title={danger ? "Mark as a false positive — hides it from KPIs & pipeline" : undefined}
                 className={cn(
-                  "rounded-md px-2.5 py-1 text-xs transition-colors",
+                  "rounded-md px-3 py-2 text-xs transition-colors",
                   active
                     ? danger
                       ? "bg-danger text-white"
@@ -438,7 +450,7 @@ function IndustryEditor({ lead, onSaved }: { lead: Lead; onSaved: (l: Lead) => v
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         }}
         placeholder="e.g. roofing"
-        className="input-glow h-8 flex-1 rounded-md border border-border bg-surface-2 px-2 text-xs"
+        className="field input-glow flex-1"
       />
       {saving && <Loader2 size={12} className="animate-spin text-text-muted" />}
     </div>
