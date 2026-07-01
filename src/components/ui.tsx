@@ -1,7 +1,83 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Priority } from "@/lib/types";
 import { priorityFromScore } from "@/lib/scoring";
 import { webPresenceLabel, type WebPresence } from "@/lib/web-presence";
+
+/** True below Tailwind's md breakpoint (768px). SSR-safe (false first paint). */
+export function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const on = () => setMobile(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return mobile;
+}
+
+/** Slide-up sheet anchored to the bottom of the viewport. Drag-down / backdrop /
+ *  Esc to dismiss. Used for the nav "More" menu and the mobile lead drawer. */
+export function BottomSheet({
+  open,
+  onClose,
+  children,
+  className,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            className="fixed inset-0 z-50 bg-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={onClose}
+          />
+          <motion.div
+            className={cn(
+              "fixed inset-x-0 bottom-0 z-50 flex max-h-[92vh] flex-col rounded-t-2xl border-t border-border bg-surface pb-safe shadow-2xl",
+              className
+            )}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.4 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 120 || info.velocity.y > 600) onClose();
+            }}
+          >
+            <div className="flex shrink-0 justify-center py-2.5">
+              <div className="h-1.5 w-10 rounded-full bg-border-strong" />
+            </div>
+            {children}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
 
 const PRIORITY_COLOR: Record<Priority, string> = {
   HIGH: "var(--success)", // green
@@ -107,7 +183,10 @@ export function Button({
 }: ButtonProps) {
   const base =
     "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50";
-  const sizes = { sm: "h-8 px-3 text-xs", md: "h-9 px-4 text-sm" };
+  const sizes = {
+    sm: "h-9 px-3 text-xs sm:h-8",
+    md: "h-11 px-4 text-sm sm:h-9",
+  };
   const variants = {
     primary: "bg-primary text-white hover:bg-primary-hover",
     secondary: "border border-border-strong bg-fill text-text-primary hover:bg-fill-strong",
