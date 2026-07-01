@@ -64,7 +64,7 @@ export default function SettingsPage() {
               key={p.provider}
               className={cn("p-4 transition-colors", p.active && "border-primary/50")}
             >
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/12 text-primary">
                     <Cpu size={18} />
@@ -85,7 +85,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-2">
+                <div className="flex flex-row items-center gap-2 sm:flex-col sm:items-end">
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]",
@@ -98,7 +98,7 @@ export default function SettingsPage() {
                     {p.connected ? "Connected" : `set ${meta.envKey}`}
                   </span>
                   {!p.active && (
-                    <Button size="sm" variant="secondary" onClick={() => choose(p.provider)} disabled={!!saving}>
+                    <Button size="sm" variant="secondary" onClick={() => choose(p.provider)} disabled={!!saving} className="shrink-0">
                       {saving === p.provider ? <Loader2 size={13} className="animate-spin" /> : null}
                       Use this
                     </Button>

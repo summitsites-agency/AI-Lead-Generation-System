@@ -139,7 +139,7 @@ export default function ScraperPage() {
                 disabled={running}
                 onClick={() => setMode(m)}
                 className={cn(
-                  "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  "flex-1 rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
                   mode === m ? "bg-primary text-white" : "text-text-secondary hover:text-text-primary"
                 )}
               >
@@ -170,7 +170,7 @@ export default function ScraperPage() {
                   onChange={(e) => setIndustry(e.target.value)}
                   placeholder="roofing, dentists, landscaping…"
                   disabled={running}
-                  className="input-glow h-9 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm"
+                  className="field input-glow"
                 />
               </Field>
               <Field label="Location" icon={<MapPin size={14} />}>
@@ -179,7 +179,7 @@ export default function ScraperPage() {
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="Montreal, QC"
                   disabled={running}
-                  className="input-glow h-9 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm"
+                  className="field input-glow"
                 />
               </Field>
               <Field label={`Max businesses: ${limit}`}>
@@ -203,7 +203,7 @@ export default function ScraperPage() {
                 rows={8}
                 disabled={running}
                 placeholder={"acmeroofing.ca\nbobsplumbing.com\n\n— or —\nname,website,phone\nAcme,acme.com,514-555-1234"}
-                className="input-glow w-full resize-y rounded-lg border border-border bg-surface-2 p-3 text-sm"
+                className="field input-glow resize-y"
               />
             </Field>
           )}

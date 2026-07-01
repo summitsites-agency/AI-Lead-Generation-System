@@ -57,7 +57,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="Enter password…"
-          className="input-glow mb-3 h-10 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm"
+          className="field input-glow mb-3"
         />
         {error && <p className="mb-3 text-xs text-danger">{error}</p>}
         <Button onClick={submit} disabled={busy || !password} className="w-full">

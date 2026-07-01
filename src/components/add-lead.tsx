@@ -63,9 +63,9 @@ export function AddLead({ onAdded }: { onAdded: (leadId: number) => void }) {
           onKeyDown={(e) => e.key === "Enter" && !busy && submit()}
           placeholder="Paste a website URL…"
           disabled={busy}
-          className="input-glow h-9 flex-1 rounded-lg border border-border bg-surface-2 px-3 text-sm"
+          className="field input-glow flex-1"
         />
-        <Button onClick={submit} disabled={busy} className="sm:shrink-0">
+        <Button onClick={submit} disabled={busy} className="w-full sm:w-auto sm:shrink-0">
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
           {busy ? "Analyzing…" : "Scan & analyze"}
         </Button>

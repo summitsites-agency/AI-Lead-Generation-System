@@ -95,9 +95,9 @@ export function AddInstagramLead({ onAdded }: { onAdded: (leadId: number) => voi
           onKeyDown={(e) => e.key === "Enter" && submit()}
           placeholder="@username or instagram.com/username…"
           disabled={busy}
-          className="input-glow h-9 flex-1 rounded-lg border border-border bg-surface-2 px-3 text-sm"
+          className="field input-glow flex-1"
         />
-        <Button onClick={submit} disabled={busy} className="sm:shrink-0">
+        <Button onClick={submit} disabled={busy} className="w-full sm:w-auto sm:shrink-0">
           {busy ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
           {busy ? "Analyzing…" : "Analyze"}
         </Button>
@@ -119,25 +119,25 @@ export function AddInstagramLead({ onAdded }: { onAdded: (leadId: number) => voi
               value={followers}
               onChange={(e) => setFollowers(e.target.value)}
               placeholder="Followers (e.g. 12.3k)"
-              className="input-glow h-8 rounded-lg border border-border bg-surface-2 px-2.5 text-xs"
+              className="field input-glow"
             />
             <input
               value={posts}
               onChange={(e) => setPosts(e.target.value)}
               placeholder="Posts (e.g. 340)"
-              className="input-glow h-8 rounded-lg border border-border bg-surface-2 px-2.5 text-xs"
+              className="field input-glow"
             />
             <input
               value={niche}
               onChange={(e) => setNiche(e.target.value)}
               placeholder="What they do (e.g. florist)"
-              className="input-glow h-8 rounded-lg border border-border bg-surface-2 px-2.5 text-xs"
+              className="field input-glow"
             />
             <input
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Bio (optional)"
-              className="input-glow h-8 rounded-lg border border-border bg-surface-2 px-2.5 text-xs"
+              className="field input-glow"
             />
           </div>
           <div className="flex gap-2">

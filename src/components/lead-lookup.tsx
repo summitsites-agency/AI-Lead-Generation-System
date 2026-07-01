@@ -128,7 +128,7 @@ export function LeadLookup({ onSaved }: { onSaved: (lead: Lead) => void }) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Acme Plumbing"
-            className="input-glow h-9 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm"
+            className="field input-glow"
           />
         </Field>
         <Field label="City" icon={<MapPin size={14} />}>
@@ -137,7 +137,7 @@ export function LeadLookup({ onSaved }: { onSaved: (lead: Lead) => void }) {
             onChange={(e) => setCity(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && search()}
             placeholder="Denver, CO"
-            className="input-glow h-9 w-full rounded-lg border border-border bg-surface-2 px-3 text-sm"
+            className="field input-glow"
           />
         </Field>
         {error && <p className="text-xs text-danger">{error}</p>}
@@ -254,10 +254,7 @@ function DraftField({
       <input
         value={value}
         onChange={onChange}
-        className={cn(
-          "input-glow h-9 w-full rounded-lg border bg-surface-2 px-3 text-sm",
-          gap ? "border-warning/60" : "border-border"
-        )}
+        className={cn("field input-glow", gap ? "border-warning/60" : "")}
       />
     </Field>
   );
