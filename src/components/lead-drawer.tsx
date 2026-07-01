@@ -374,7 +374,7 @@ function DrawerBody({
                   key={p}
                   onClick={async () => onStatusChange(await setLeadPriority(lead.id, p))}
                   className={cn(
-                    "rounded-md border px-3 py-2 text-xs font-medium transition-colors",
+                    "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors",
                     active ? PRIORITY_ACTIVE[p] : "border-border text-text-secondary hover:bg-hover"
                   )}
                 >
@@ -399,7 +399,7 @@ function DrawerBody({
                 onClick={async () => onStatusChange(await setLeadStatus(lead.id, s))}
                 title={danger ? "Mark as a false positive — hides it from KPIs & pipeline" : undefined}
                 className={cn(
-                  "rounded-md px-3 py-2 text-xs transition-colors",
+                  "rounded-md px-2.5 py-1 text-xs transition-colors",
                   active
                     ? danger
                       ? "bg-danger text-white"
@@ -450,7 +450,7 @@ function IndustryEditor({ lead, onSaved }: { lead: Lead; onSaved: (l: Lead) => v
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         }}
         placeholder="e.g. roofing"
-        className="field input-glow flex-1"
+        className="input-glow h-8 flex-1 rounded-md border border-border bg-surface-2 px-2 text-xs"
       />
       {saving && <Loader2 size={12} className="animate-spin text-text-muted" />}
     </div>

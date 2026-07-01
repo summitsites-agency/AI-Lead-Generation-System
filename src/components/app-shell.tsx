@@ -122,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(56px+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">
           {children}
         </main>
       </div>
@@ -140,7 +140,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 active ? "text-primary" : "text-text-secondary"
               )}
             >
-              <Icon size={24} />
+              <Icon size={30} />
               {label}
             </Link>
           );
@@ -152,7 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             OVERFLOW.some((o) => pathname.startsWith(o.href)) ? "text-primary" : "text-text-secondary"
           )}
         >
-          <MoreHorizontal size={24} />
+          <MoreHorizontal size={30} />
           More
         </button>
       </nav>
