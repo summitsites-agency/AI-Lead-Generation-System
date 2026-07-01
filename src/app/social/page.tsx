@@ -57,21 +57,21 @@ export default function SocialLeadsPage() {
 
       <AddInstagramLead onAdded={onAdded} />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+        <div className="relative w-full sm:flex-1 sm:min-w-48">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search business or page…"
-            className="input-glow h-9 w-full rounded-lg border border-border bg-surface-2 pl-9 pr-3 text-sm"
+            className="field input-glow pl-9"
           />
         </div>
 
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="input-glow h-9 rounded-lg border border-border bg-surface-2 px-3 text-sm"
+          className="field input-glow w-full sm:w-auto"
         >
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>
