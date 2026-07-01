@@ -42,7 +42,7 @@ export default function CampaignsPage() {
         {COLUMNS.map((col) => {
           const items = leads.filter((l) => l.status === col.status);
           return (
-            <div key={col.status} className="w-[80%] shrink-0 snap-center rounded-xl border border-border bg-surface/40 sm:w-[45%] md:w-auto md:shrink">
+            <div key={col.status} className="w-[85%] shrink-0 snap-center rounded-xl border border-border bg-surface/40 sm:w-[46%] md:w-auto md:shrink">
               <div className="flex items-center justify-between border-b border-border px-3 py-2">
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <span className="h-2 w-2 rounded-full" style={{ background: col.accent }} />
@@ -60,7 +60,7 @@ export default function CampaignsPage() {
                     <button
                       key={lead.id}
                       onClick={() => setSelected(lead.id)}
-                      className="w-full rounded-lg border border-border bg-surface p-3 text-left transition-colors hover:border-border-strong"
+                      className="w-full rounded-lg border border-border bg-surface p-3.5 text-left transition-colors hover:border-border-strong"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <span className="truncate text-sm font-medium">{lead.name}</span>

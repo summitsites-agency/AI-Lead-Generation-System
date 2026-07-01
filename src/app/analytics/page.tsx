@@ -116,7 +116,8 @@ export default function AnalyticsPage() {
                   dataKey="industry"
                   stroke="#6b7280"
                   fontSize={12}
-                  width={90}
+                  width={72}
+                  tick={{ fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                 />
