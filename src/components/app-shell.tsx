@@ -136,11 +136,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={href}
               href={href}
               className={cn(
-                "flex flex-1 flex-col items-center justify-end gap-1 pb-2 text-[10px] font-medium",
+                "flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium",
                 active ? "text-primary" : "text-text-secondary"
               )}
             >
-              <Icon size={24} />
+              <Icon size={22} />
               {label}
             </Link>
           );
@@ -148,11 +148,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={() => setMoreOpen(true)}
           className={cn(
-            "flex flex-1 flex-col items-center justify-end gap-1 pb-2 text-[10px] font-medium",
+            "flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-medium",
             OVERFLOW.some((o) => pathname.startsWith(o.href)) ? "text-primary" : "text-text-secondary"
           )}
         >
-          <MoreHorizontal size={24} />
+          <MoreHorizontal size={22} />
           More
         </button>
       </nav>
