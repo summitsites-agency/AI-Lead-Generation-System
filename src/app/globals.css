@@ -105,6 +105,62 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Kill the grey tap flash and double-tap zoom on interactive controls (mobile) */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Safe-area helpers for notched phones / home indicator */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.h-tabbar {
+  height: 56px;
+}
+
+/* Shared form-control style. 16px on mobile prevents iOS focus-zoom; 14px at
+   sm+. 44px min-height on mobile for comfortable taps; 36px at sm+. */
+.field {
+  width: 100%;
+  height: 2.75rem; /* 44px */
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 0 0.75rem;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+textarea.field {
+  height: auto;
+  padding: 0.625rem 0.75rem;
+  line-height: 1.5;
+}
+.field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+@media (min-width: 640px) {
+  .field {
+    height: 2.25rem; /* 36px */
+    font-size: 0.875rem; /* 14px */
+  }
+}
+
 /* Tabular numbers for dense data tables / KPI figures */
 .tnum {
   font-variant-numeric: tabular-nums;
