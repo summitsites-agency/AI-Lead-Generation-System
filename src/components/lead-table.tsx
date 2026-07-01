@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, X, Trash2 } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { ScoreBar, PriorityBadge, Pill, WebPresenceBadge } from "@/components/ui";
 import { STATUS_DOT, STATUS_LABEL } from "@/lib/status";
@@ -31,8 +31,64 @@ export function LeadTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full border-collapse text-sm">
+    <>
+      {/* Mobile: tappable cards (no sideways scrolling) */}
+      <div className="space-y-2 md:hidden">
+        {leads.map((lead) => (
+          <div
+            key={lead.id}
+            onClick={() => onSelect(lead.id)}
+            className={cn(
+              "rounded-xl border border-border bg-surface p-3.5 active:bg-primary/[0.06]",
+              lead.status === "not_a_lead" && "opacity-45"
+            )}
+          >
+            <div className="flex items-start gap-2">
+              <span className="min-w-0 flex-1 truncate font-medium text-text-primary">
+                {lead.name}
+              </span>
+              <PriorityBadge priority={lead.priority} />
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Delete "${lead.name}"? This can't be undone.`)) onDelete(lead.id);
+                  }}
+                  aria-label="Delete lead"
+                  className="-m-2 grid h-11 w-11 shrink-0 place-items-center text-text-muted/70 active:text-danger"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+              <WebPresenceBadge presence={lead.web_presence} website={lead.website} />
+              <span className="truncate">
+                {lead.website.startsWith("http") ? displayHost(lead.website) : "no site"}
+              </span>
+              {lead.rating != null && (
+                <span className="tnum whitespace-nowrap">
+                  · <span className="text-warning">★</span> {lead.rating.toFixed(1)} (
+                  {fmt(lead.review_count)})
+                </span>
+              )}
+            </div>
+            <div className="mt-2.5">
+              <ScoreBar score={lead.lead_score} />
+            </div>
+            <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-text-secondary">
+              <span
+                className={cn("h-1.5 w-1.5 rounded-full", STATUS_DOT[lead.status] ?? "bg-text-muted")}
+              />
+              {STATUS_LABEL[lead.status] ?? lead.status}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: full data table */}
+      <div className="hidden overflow-x-auto rounded-xl border border-border md:block">
+        <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-border bg-surface/60 text-left text-xs text-text-muted">
             <th className="px-3 py-2.5 font-medium sm:px-4">Business</th>
@@ -119,7 +175,8 @@ export function LeadTable({
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 
