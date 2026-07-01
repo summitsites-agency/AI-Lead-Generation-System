@@ -122,7 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="min-h-0 flex-1 overflow-y-auto pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-0">
           {children}
         </main>
       </div>

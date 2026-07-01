@@ -129,7 +129,7 @@ a,
   padding-top: env(safe-area-inset-top);
 }
 .h-tabbar {
-  height: 64px;
+  height: 80px;
 }
 
 /* Shared form-control style. 16px on mobile prevents iOS focus-zoom; 14px at
