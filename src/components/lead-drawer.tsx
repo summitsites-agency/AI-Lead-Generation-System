@@ -94,7 +94,7 @@ export function LeadDrawer({
             className={cn(
               "fixed z-50 flex flex-col border-border bg-surface shadow-2xl",
               mobile
-                ? "inset-x-0 bottom-0 max-h-[92vh] rounded-t-2xl border-t pb-safe"
+                ? "inset-x-0 bottom-0 h-[92vh] rounded-t-2xl border-t pb-safe"
                 : "inset-y-0 right-0 w-full max-w-xl border-l"
             )}
             initial={mobile ? { y: "100%" } : { x: "100%" }}
