@@ -1,6 +1,7 @@
 import "server-only";
 import * as cheerio from "cheerio";
 import type { Analysis, DiscoveredBusiness, FacebookMeta } from "@/lib/types";
+import type { DiscoverOptions } from "./places";
 import { extractContactFromBio } from "./instagram";
 
 /** Build the Google query that finds public Facebook business pages. */
@@ -188,4 +189,82 @@ export function facebookAnalysis(website: string | null): Analysis {
     lead_score: 55,
     engine: "fallback",
   };
+}
+
+const UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+
+/**
+ * Discover Facebook business pages for `industry in location` via Google, then
+ * read each public page for name/category/contact and the business's real
+ * website. Best-effort and resilient: returns [] (logging a warning) if Google
+ * blocks us, and skips individual pages that fail. Local-only (needs Playwright).
+ */
+export async function discoverViaFacebook(
+  industry: string,
+  location: string,
+  opts: DiscoverOptions = {}
+): Promise<DiscoveredBusiness[]> {
+  const limit = Math.max(1, Math.min(opts.limit ?? 30, 60));
+  const log = opts.onLog ?? (() => {});
+  const headless = (process.env.HEADLESS ?? "true").toLowerCase() !== "false";
+
+  let browser: import("playwright").Browser | null = null;
+  try {
+    const { chromium } = await import("playwright");
+    browser = await chromium.launch({ headless });
+    const context = await browser.newContext({
+      userAgent: UA,
+      locale: "en-US",
+      viewport: { width: 1280, height: 900 },
+    });
+    const page = await context.newPage();
+
+    const query = buildSearchQuery(industry, location);
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&num=30`;
+    log(`Searching Google for Facebook pages: "${query}"…`);
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+
+    // Google's EU consent interstitial, when present.
+    const consent = page
+      .getByRole("button", { name: /accept all|reject all|i agree/i })
+      .first();
+    if (await consent.isVisible().catch(() => false)) {
+      await consent.click().catch(() => {});
+      await page.waitForTimeout(800);
+    }
+
+    const urls = parseSearchResults(await page.content()).slice(0, limit);
+    if (!urls.length) {
+      log("Google returned no Facebook pages (blocked or no matches).", "warn");
+      return [];
+    }
+    log(`Found ${urls.length} Facebook page(s); reading each…`, "success");
+
+    const businesses: DiscoveredBusiness[] = [];
+    for (const pageUrl of urls) {
+      try {
+        await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
+        businesses.push(extractPageFromHtml(await page.content(), pageUrl));
+      } catch {
+        // A single page failing shouldn't abort discovery.
+        businesses.push({
+          name: pageUrl,
+          website: pageUrl,
+          phone: "",
+          email: "",
+          address: "",
+          source: "facebook",
+          facebook: { pageUrl, category: "", website: null },
+        });
+      }
+    }
+    return businesses;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    log(`Facebook discovery unavailable (${msg}).`, "warn");
+    return [];
+  } finally {
+    await browser?.close().catch(() => {});
+  }
 }
