@@ -135,6 +135,8 @@ export interface LeadFilter {
   hideDisqualified?: boolean;
   /** filter by web presence; "no_site" = anything that isn't a real site */
   presence?: WebPresence | "no_site";
+  /** filter by lead source, e.g. "instagram" | "facebook" */
+  source?: string;
 }
 
 export async function listLeads(filter: LeadFilter = {}): Promise<Lead[]> {
@@ -145,6 +147,7 @@ export async function listLeads(filter: LeadFilter = {}): Promise<Lead[]> {
   if (filter.priority) conds.push(sql`priority = ${filter.priority}`);
   if (filter.status) conds.push(sql`status = ${filter.status}`);
   if (filter.industry) conds.push(sql`industry = ${filter.industry}`);
+  if (filter.source) conds.push(sql`source = ${filter.source}`);
   if (filter.search) {
     const q = `%${filter.search}%`;
     conds.push(sql`(name ILIKE ${q} OR website ILIKE ${q})`);

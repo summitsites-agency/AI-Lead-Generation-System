@@ -16,6 +16,7 @@ export const GET = safeRoute(async (req: NextRequest) => {
     sort: (sp.get("sort") as LeadFilter["sort"]) || "rank",
     hideDisqualified: sp.get("hideDisqualified") === "1",
     presence: (sp.get("presence") as LeadFilter["presence"]) || undefined,
+    source: sp.get("source") || undefined,
   };
   return NextResponse.json({ leads: await listLeads(filter) });
 });

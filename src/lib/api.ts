@@ -20,6 +20,8 @@ export interface LeadQuery {
   hideDisqualified?: boolean;
   /** filter by web presence; "no_site" = no real website (the new-build pool) */
   presence?: string;
+  /** filter by lead source, e.g. "instagram" | "facebook" */
+  source?: string;
 }
 
 export async function fetchLeads(q: LeadQuery = {}): Promise<Lead[]> {
