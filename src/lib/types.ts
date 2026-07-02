@@ -28,6 +28,8 @@ export interface DiscoveredBusiness {
   rating?: number | null;
   /** Number of ratings/reviews, when the source provides it. */
   reviewCount?: number | null;
+  /** Facebook page data, when discovered via the Facebook source. */
+  facebook?: FacebookMeta;
 }
 
 /** Raw signals extracted from a business's website. */
@@ -78,9 +80,20 @@ export interface InstagramMeta {
   externalUrl: string | null;
 }
 
-/** Extra structured data attached to a lead (currently the IG profile snapshot). */
+/** Public data read from a Facebook business page. */
+export interface FacebookMeta {
+  /** the Facebook page URL (also stored as the lead's `website`) */
+  pageUrl: string;
+  /** page category as shown on Facebook, best-effort ("" if unknown) */
+  category: string;
+  /** the business's real website if one was found on the page, else null */
+  website: string | null;
+}
+
+/** Extra structured data attached to a lead (IG profile snapshot, FB page data). */
 export interface LeadMeta {
   instagram?: InstagramMeta;
+  facebook?: FacebookMeta;
 }
 
 export interface Lead {
