@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildSearchQuery,
-  decodeGoogleUrl,
+  decodeResultUrl,
   parseSearchResults,
   isBusinessPageUrl,
   extractWebsiteFromHtml,
@@ -21,32 +21,38 @@ describe("buildSearchQuery", () => {
   });
 });
 
-describe("decodeGoogleUrl", () => {
+describe("decodeResultUrl", () => {
+  it("unwraps a DuckDuckGo /l/?uddg= redirect", () => {
+    expect(
+      decodeResultUrl("//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.facebook.com%2Fbistrolili&rut=x")
+    ).toBe("https://www.facebook.com/bistrolili");
+  });
+
   it("unwraps a Google /url?q= redirect", () => {
     expect(
-      decodeGoogleUrl("/url?q=https://www.facebook.com/joesroofing&sa=U&ved=x")
+      decodeResultUrl("/url?q=https://www.facebook.com/joesroofing&sa=U&ved=x")
     ).toBe("https://www.facebook.com/joesroofing");
   });
 
   it("returns a direct href unchanged", () => {
-    expect(decodeGoogleUrl("https://www.facebook.com/joesroofing")).toBe(
+    expect(decodeResultUrl("https://www.facebook.com/joesroofing")).toBe(
       "https://www.facebook.com/joesroofing"
     );
   });
 
   it("returns null for junk", () => {
-    expect(decodeGoogleUrl("#")).toBeNull();
-    expect(decodeGoogleUrl("")).toBeNull();
+    expect(decodeResultUrl("#")).toBeNull();
+    expect(decodeResultUrl("")).toBeNull();
   });
 });
 
 describe("parseSearchResults", () => {
-  const html = `<div id="search">
-    <a href="/url?q=https://www.facebook.com/joesroofing&sa=U">Joe's Roofing</a>
-    <a href="/url?q=https://www.facebook.com/groups/123&sa=U">A group</a>
+  const html = `<div class="results">
+    <a href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.facebook.com%2Fjoesroofing&rut=a">Joe's Roofing</a>
+    <a href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.facebook.com%2Fgroups%2F123&rut=b">A group</a>
     <a href="https://www.facebook.com/acmeplumbing/">Acme Plumbing</a>
-    <a href="/url?q=https://example.com/other&sa=U">Not facebook</a>
-    <a href="/search?q=more">Google internal</a>
+    <a href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fother&rut=c">Not facebook</a>
+    <a href="/search?q=more">Internal</a>
   </div>`;
 
   it("returns decoded facebook page URLs only, deduped", () => {

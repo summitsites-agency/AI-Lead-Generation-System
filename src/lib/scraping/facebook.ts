@@ -10,20 +10,24 @@ export function buildSearchQuery(industry: string, location: string): string {
 }
 
 /**
- * Turn a Google result href into a real URL. Handles both the `/url?q=…`
- * redirect wrapper and direct hrefs. Returns null for internal/junk links.
+ * Turn a search-result href into a real URL. Handles DuckDuckGo's
+ * `/l/?uddg=<encoded>` redirect, Google's `/url?q=<encoded>` redirect, and
+ * direct hrefs. Returns null for internal/junk links.
  */
-export function decodeGoogleUrl(href: string): string | null {
+export function decodeResultUrl(href: string): string | null {
   const raw = (href ?? "").trim();
   if (!raw || raw.startsWith("#")) return null;
   try {
-    const u = new URL(raw, "https://www.google.com");
+    const u = new URL(raw, "https://duckduckgo.com");
+    const uddg = u.searchParams.get("uddg");
+    if (uddg) return uddg;
     if (u.pathname === "/url") {
       const target = u.searchParams.get("q") || u.searchParams.get("url");
       return target ? target : null;
     }
-    // Direct external link (Google sometimes renders these).
-    if (/^https?:$/.test(u.protocol) && u.hostname !== "www.google.com") {
+    // Direct external link (skip the search engines' own hosts).
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (/^https?:$/.test(u.protocol) && host !== "duckduckgo.com" && host !== "google.com") {
       return u.toString();
     }
     return null;
@@ -64,14 +68,14 @@ export function isBusinessPageUrl(url: string): boolean {
   return !blocked.has(first);
 }
 
-/** Collect decoded, business-page-only Facebook URLs from a Google results page. */
+/** Collect decoded, business-page-only Facebook URLs from a search results page. */
 export function parseSearchResults(html: string): string[] {
   const $ = cheerio.load(html);
   const seen = new Set<string>();
   $("a").each((_, el) => {
     const href = $(el).attr("href");
     if (!href) return;
-    const decoded = decodeGoogleUrl(href);
+    const decoded = decodeResultUrl(href);
     if (decoded && isBusinessPageUrl(decoded)) seen.add(decoded);
   });
   return Array.from(seen);
@@ -191,14 +195,75 @@ export function facebookAnalysis(website: string | null): Analysis {
   };
 }
 
-const UA =
+// A normal desktop UA for the search request; the crawler UA (which Facebook
+// serves Open Graph tags to) for reading each page.
+const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const CRAWLER_UA =
+  "Mozilla/5.0 (compatible; SummitSitesBot/1.0; +https://summitsites.local) facebookexternalhit/1.1";
 
 /**
- * Discover Facebook business pages for `industry in location` via Google, then
- * read each public page for name/category/contact and the business's real
- * website. Best-effort and resilient: returns [] (logging a warning) if Google
- * blocks us, and skips individual pages that fail. Local-only (needs Playwright).
+ * POST the query to DuckDuckGo's HTML endpoint; returns the HTML, or null when
+ * blocked. DuckDuckGo answers rapid/repeated scraping with HTTP 202 and an
+ * "anomaly" page rather than a 4xx, so we require a strict 200.
+ */
+async function searchDuckDuckGo(query: string): Promise<string | null> {
+  try {
+    const res = await fetch("https://html.duckduckgo.com/html/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": BROWSER_UA,
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      body: new URLSearchParams({ q: query }).toString(),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (res.status !== 200) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+/** Fetch a Facebook page's public HTML with the crawler UA; null on failure. */
+async function fetchPageHtml(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": CRAWLER_UA, "Accept-Language": "en-US,en;q=0.9" },
+      redirect: "follow",
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+/** Run `fn` over `items` with at most `concurrency` in flight; preserves order. */
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      out[i] = await fn(items[i]);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+/**
+ * Discover Facebook business pages for `industry in location` via DuckDuckGo,
+ * then read each public page for name/category/contact and the business's real
+ * website. Best-effort and resilient: returns [] (logging a warning) if the
+ * search is blocked, and falls back to a bare record for pages that fail to load.
  */
 export async function discoverViaFacebook(
   industry: string,
@@ -207,64 +272,39 @@ export async function discoverViaFacebook(
 ): Promise<DiscoveredBusiness[]> {
   const limit = Math.max(1, Math.min(opts.limit ?? 30, 60));
   const log = opts.onLog ?? (() => {});
-  const headless = (process.env.HEADLESS ?? "true").toLowerCase() !== "false";
 
-  let browser: import("playwright").Browser | null = null;
-  try {
-    const { chromium } = await import("playwright");
-    browser = await chromium.launch({ headless });
-    const context = await browser.newContext({
-      userAgent: UA,
-      locale: "en-US",
-      viewport: { width: 1280, height: 900 },
-    });
-    const page = await context.newPage();
-
-    const query = buildSearchQuery(industry, location);
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&hl=en&num=30`;
-    log(`Searching Google for Facebook pages: "${query}"…`);
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
-
-    // Google's EU consent interstitial, when present.
-    const consent = page
-      .getByRole("button", { name: /accept all|reject all|i agree/i })
-      .first();
-    if (await consent.isVisible().catch(() => false)) {
-      await consent.click().catch(() => {});
-      await page.waitForTimeout(800);
-    }
-
-    const urls = parseSearchResults(await page.content()).slice(0, limit);
-    if (!urls.length) {
-      log("Google returned no Facebook pages (blocked or no matches).", "warn");
-      return [];
-    }
-    log(`Found ${urls.length} Facebook page(s); reading each…`, "success");
-
-    const businesses: DiscoveredBusiness[] = [];
-    for (const pageUrl of urls) {
-      try {
-        await page.goto(pageUrl, { waitUntil: "domcontentloaded", timeout: 30_000 });
-        businesses.push(extractPageFromHtml(await page.content(), pageUrl));
-      } catch {
-        // A single page failing shouldn't abort discovery.
-        businesses.push({
-          name: pageUrl,
-          website: pageUrl,
-          phone: "",
-          email: "",
-          address: "",
-          source: "facebook",
-          facebook: { pageUrl, category: "", website: null },
-        });
-      }
-    }
-    return businesses;
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    log(`Facebook discovery unavailable (${msg}).`, "warn");
+  const query = buildSearchQuery(industry, location);
+  log(`Searching DuckDuckGo for Facebook pages: "${query}"…`);
+  const searchHtml = await searchDuckDuckGo(query);
+  if (!searchHtml) {
+    log(
+      "DuckDuckGo search was unavailable (rate-limited or timed out) — try again in a few minutes.",
+      "warn"
+    );
     return [];
-  } finally {
-    await browser?.close().catch(() => {});
   }
+
+  const urls = parseSearchResults(searchHtml).slice(0, limit);
+  if (!urls.length) {
+    log("DuckDuckGo returned no Facebook pages for that search.", "warn");
+    return [];
+  }
+  log(`Found ${urls.length} Facebook page(s); reading each…`, "success");
+
+  return mapPool(urls, 3, async (pageUrl) => {
+    const html = await fetchPageHtml(pageUrl);
+    if (!html) {
+      // A single page failing shouldn't drop it from the results.
+      return {
+        name: pageUrl,
+        website: pageUrl,
+        phone: "",
+        email: "",
+        address: "",
+        source: "facebook",
+        facebook: { pageUrl, category: "", website: null },
+      } satisfies DiscoveredBusiness;
+    }
+    return extractPageFromHtml(html, pageUrl);
+  });
 }
