@@ -3,10 +3,12 @@ import type {
   Analysis,
   DiscoveredBusiness,
   Lead,
+  LeadMeta,
   ScanEvent,
   SiteSignals,
 } from "@/lib/types";
 import { defaultSources, runSourceChain } from "@/lib/scraping/sources";
+import { discoverViaFacebook, facebookAnalysis } from "@/lib/scraping/facebook";
 import { parseImport } from "@/lib/scraping/csv";
 import { scrapeSite } from "@/lib/scraping/site";
 import { analyzeSite } from "@/lib/ai/analyze";
@@ -23,6 +25,8 @@ export interface ScanRequest {
   location?: string;
   importText?: string;
   limit?: number;
+  /** also search Facebook via Google (additive to the normal source chain) */
+  facebook?: boolean;
 }
 
 type Emit = (e: ScanEvent) => void;
@@ -100,10 +104,18 @@ async function discover(
     return list;
   }
 
-  return runSourceChain(defaultSources(), industry, location, {
+  const onLog = (message: string, level?: ScanEvent["level"]) =>
+    emit({ type: "log", message, level });
+
+  const primary = await runSourceChain(defaultSources(), industry, location, {
     limit: req.limit,
-    onLog: (message, level) => emit({ type: "log", message, level }),
+    onLog,
   });
+
+  if (!req.facebook) return primary;
+
+  const fb = await discoverViaFacebook(industry, location, { limit: req.limit, onLog });
+  return [...primary, ...fb];
 }
 
 async function processBusiness(
@@ -133,9 +145,29 @@ async function processBusiness(
   // Social- or directory-only presence (Instagram, Yelp, etc.) — no real website.
   // Keep the actual URL so we can link straight to their page for research.
   if (presence === "social" || presence === "directory") {
+    const url = canonicalUrl(biz.website) || normalizeUrl(biz.website) || biz.website;
+
+    // Facebook leads carry their own analysis + page metadata.
+    if (biz.source === "facebook" && biz.facebook) {
+      const hasSite = biz.facebook.website ? "with a website" : "no website";
+      emit({ type: "log", message: `${biz.name}: Facebook page (${hasSite}).` });
+      const lead = await store(
+        biz,
+        url,
+        industry,
+        location,
+        biz.source,
+        facebookAnalysis(biz.facebook.website),
+        "social",
+        biz.email || "",
+        null,
+        { facebook: biz.facebook }
+      );
+      return { lead, reachable: false };
+    }
+
     const kind = presence === "social" ? "social page" : "directory listing";
     emit({ type: "log", message: `${biz.name}: ${kind} only — flagging as top opportunity.` });
-    const url = canonicalUrl(biz.website) || normalizeUrl(biz.website) || biz.website;
     const lead = await store(
       biz,
       url,
@@ -206,7 +238,8 @@ async function store(
   a: Analysis,
   presence: WebPresence,
   email = "",
-  builder: string | null = null
+  builder: string | null = null,
+  meta: LeadMeta | null = null
 ): Promise<Lead> {
   const rating = biz.rating ?? null;
   const reviewCount = biz.reviewCount ?? null;
@@ -234,6 +267,7 @@ async function store(
     review_count: reviewCount,
     value_score: valueScore(rating, reviewCount, builder),
     builder,
+    meta,
   };
   return upsertLead(lead);
 }
