@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { runScan, type ScanRequest } from "@/lib/pipeline";
+import { isDiscoveryBlocked } from "@/lib/scraper-availability";
 import type { ScanEvent } from "@/lib/types";
 
 // Playwright + long-running work: never statically optimized, no edge runtime.
@@ -23,12 +24,12 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Google Maps discovery drives a real browser (Playwright), which only runs on
-  // your local machine. On the hosted site it's disabled — but Import / CSV and
-  // the manual "Add your own lead" flow still work (they use plain HTTP scraping).
-  if (body.mode === "discover" && process.env.NEXT_PUBLIC_SCRAPER_ENABLED !== "true") {
+  // Discovery drives a real browser (Playwright), which only runs off Vercel.
+  // On the hosted site it's disabled — but Import / CSV and the manual "Add your
+  // own lead" flow still work (they use plain HTTP scraping). Locally it's on.
+  if (body.mode === "discover" && isDiscoveryBlocked()) {
     const message =
-      "Google Maps discovery runs on your computer, not the hosted site. " +
+      "Discovery scans run on your computer, not the hosted site. " +
       "Use Import / CSV or “Add your own lead” here, or run a discovery scan from your local app.";
     const line = JSON.stringify({ type: "error", level: "error", message }) + "\n";
     return new Response(line, {
