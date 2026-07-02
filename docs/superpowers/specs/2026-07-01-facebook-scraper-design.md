@@ -19,7 +19,10 @@ user can immediately tell "no site → build" from "has a site → redesign".
    behind a login wall, so we do **not** scrape Facebook search directly and we
    do **not** use stored FB account credentials (ToS + ban risk). Instead we use
    Google to find public FB business-page URLs, then read each page.
-3. **Search engine:** Google, driven by Playwright (see below).
+3. **Search engine:** DuckDuckGo via a plain `fetch` (see below). *(Originally
+   Google via Playwright; changed after a live test — Google blocks the headless
+   request with a `/sorry` reCAPTCHA wall and returned zero leads, while
+   DuckDuckGo's HTML endpoint returned real FB business pages over plain HTTP.)*
 4. **Integration:** additive and **opt-in** via a checkbox on the scanner. When
    on, Facebook runs alongside the normal source chain and results are merged +
    deduped. Off by default so scans don't pay the extra latency / rate-limit
@@ -30,21 +33,28 @@ user can immediately tell "no site → build" from "has a site → redesign".
 6. **/social filter (hard requirement):** the `/social` page gains a source
    filter — **All · Instagram · Facebook**.
 
-## Search engine choice: Google via Playwright
+## Search engine choice: DuckDuckGo via `fetch`
 
-Google blocks plain-fetch scraping, but discovery mode already spins up a real
-browser locally for Google Maps (`src/lib/scraping/google-maps.ts`) and is
-gated local-only. The Facebook source reuses that browser:
+Google was tried first (driven by Playwright, reusing the Google Maps browser),
+but a live test showed Google immediately redirects the headless request to
+`google.com/sorry/index` (an "unusual traffic" reCAPTCHA wall) — zero usable
+results. DuckDuckGo's HTML endpoint, by contrast, answers a plain HTTP POST and
+returned real Facebook business pages, so it needs **no browser at all**:
 
-- Navigate to `https://www.google.com/search?q=<industry> <location> site:facebook.com&hl=en`.
-- Reuse the consent-dismiss pattern from `google-maps.ts` (`dismissConsent`).
-- Extract organic result anchors, decode Google's `/url?q=<encoded>&…` wrapper
-  to the real URL.
-- Filter to real `facebook.com/<page>` URLs; then reuse the same browser context
-  to open each page (like `google-maps.ts` opens each place).
+- POST `q=<industry> <location> site:facebook.com` to `https://html.duckduckgo.com/html/`
+  with a desktop User-Agent.
+- Parse result anchors with Cheerio; decode DuckDuckGo's `//duckduckgo.com/l/?uddg=<encoded>`
+  redirect wrapper (and Google's `/url?q=` form, for robustness) to the real URL.
+- Filter to real `facebook.com/<page>` URLs; then fetch each page's public HTML
+  with the `facebookexternalhit` crawler UA (a small concurrency pool of 3).
 
-Rejected: DuckDuckGo/Bing fetch (user chose Google); paid SERP API (costs money
-+ new key + billing, against the app's key-free-with-fallback design).
+DuckDuckGo answers rapid/repeated scraping with HTTP 202 + an "anomaly" page
+rather than a 4xx, so the search helper requires a strict 200 and otherwise
+reports the search as unavailable (rate-limited). Occasional scans are fine;
+heavy back-to-back scans can trip the limit.
+
+Rejected: Google (proven blocked); paid SERP API (costs money + new key +
+billing, against the app's key-free-with-fallback design).
 
 ## Architecture
 
@@ -61,17 +71,18 @@ discoverViaFacebook(
 ): Promise<DiscoveredBusiness[]>
 ```
 
-Orchestration (Playwright, local-only): launch/reuse a Chromium browser →
-Google search → dismiss consent → collect + decode result URLs → filter/dedupe
-to FB page URLs → cap to `opts.limit` → open each FB page → extract page data →
-build `DiscoveredBusiness`. Fails **soft**: returns `[]` on block/empty and logs
-via `opts.onLog`; never throws the scan. Per-page failures skip that one page
-(like `google-maps.ts` per-place resilience).
+Orchestration (plain `fetch`, no browser): DuckDuckGo search → collect + decode
+result URLs → filter/dedupe to FB page URLs → cap to `opts.limit` → fetch each FB
+page's public HTML (concurrency pool of 3) → extract page data → build
+`DiscoveredBusiness`. Fails **soft**: returns `[]` on block/rate-limit/empty and
+logs via `opts.onLog`; never throws the scan. Per-page failures fall back to a
+bare record (page URL + name only) rather than dropping the lead.
 
 Pure, individually testable helpers (no network — like `instagram.ts`):
 
 - `buildSearchQuery(industry, location)` → e.g. `"roofing Montreal QC site:facebook.com"`
-- `decodeGoogleUrl(href)` → real URL from a Google `/url?q=…` result href.
+- `decodeResultUrl(href)` → real URL from DuckDuckGo's `/l/?uddg=…` (and Google's
+  `/url?q=…`) redirect wrapper, or a direct href.
 - `parseSearchResults(html)` → `string[]` decoded result URLs (parsed with Cheerio,
   already a dependency).
 - `isBusinessPageUrl(url)` → `boolean` — keep real page URLs; reject `/groups/`,
@@ -178,10 +189,10 @@ Scanner (discover, "Also search Facebook" ✓)
 
 ## Error handling
 
-- Google search blocked/empty → return `[]`, log a warning, scan continues with
-  whatever the other sources found.
-- A single FB page fetch failing → skip that page, keep the rest.
-- All navigation uses timeouts (matching existing scrapers).
+- DuckDuckGo search blocked/rate-limited (non-200)/empty → return `[]`, log a
+  warning, scan continues with whatever the other sources found.
+- A single FB page fetch failing → keep the lead as a bare record (page URL + name).
+- All fetches use `AbortSignal.timeout(...)` (matching existing scrapers).
 - `discoverViaFacebook` never throws into the scan.
 
 ## Testing
@@ -191,8 +202,8 @@ Pure helpers with fixture HTML, no network — following `instagram.test.ts` /
 
 - `src/lib/scraping/facebook.test.ts`:
   - `buildSearchQuery` — composes the `site:facebook.com` query.
-  - `decodeGoogleUrl` — `/url?q=…` wrapper → real URL.
-  - `parseSearchResults` — Google results fixture → decoded `facebook.com/<page>` URLs.
+  - `decodeResultUrl` — DDG `/l/?uddg=…` and Google `/url?q=…` wrappers → real URL.
+  - `parseSearchResults` — DuckDuckGo results fixture → decoded `facebook.com/<page>` URLs.
   - `isBusinessPageUrl` — keeps real pages; rejects groups/events/profile.php/login.
   - `extractWebsiteFromHtml` — decodes `l.php?u=` / Intro link; returns `null` when
     only internal FB links exist.
@@ -208,8 +219,12 @@ Pure helpers with fixture HTML, no network — following `instagram.test.ts` /
   lead" flow).
 - Scraping/analyzing the detected external website's content (design/SEO scoring
   of the real site) — we detect + link it, but don't crawl it.
-- Running Facebook discovery on hosted Vercel — search engines block datacenter
-  IPs, so it stays local like Google Maps discovery.
+- Running Facebook discovery on hosted Vercel — the source no longer needs
+  Playwright, but discover mode is gated off on the hosted site and datacenter
+  IPs are more likely to be rate-limited by DuckDuckGo, so it stays a local tool.
+- Improving website/category detection from Facebook's logged-out HTML (a live
+  test reliably got the page name but not the external website). Deferred as a
+  follow-up: page name + FB URL + no-website flagging all work today.
 
 ## Affected files
 
