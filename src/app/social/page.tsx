@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { fetchLeads, deleteLead } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { LeadTable } from "@/components/lead-table";
 import { LeadDrawer } from "@/components/lead-drawer";
 import { AddInstagramLead } from "@/components/add-instagram-lead";
@@ -21,13 +22,14 @@ export default function SocialLeadsPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [sort, setSort] = useState("score");
   const [search, setSearch] = useState("");
+  const [source, setSource] = useState("");
 
   const load = useCallback(() => {
     setLoading(true);
-    fetchLeads({ presence: "no_site", sort, search })
+    fetchLeads({ presence: "no_site", sort, search, source })
       .then(setLeads)
       .finally(() => setLoading(false));
-  }, [sort, search]);
+  }, [sort, search, source]);
 
   useEffect(() => {
     const t = setTimeout(load, search ? 250 : 0);
@@ -56,6 +58,27 @@ export default function SocialLeadsPage() {
       </div>
 
       <AddInstagramLead onAdded={onAdded} />
+
+      <div className="flex gap-1 rounded-lg border border-border bg-surface-2 p-1 text-xs font-medium">
+        {[
+          { value: "", label: "All" },
+          { value: "instagram", label: "Instagram" },
+          { value: "facebook", label: "Facebook" },
+        ].map((s) => (
+          <button
+            key={s.value}
+            onClick={() => setSource(s.value)}
+            className={cn(
+              "flex-1 rounded-md px-2.5 py-1.5 transition-colors",
+              source === s.value
+                ? "bg-primary text-white"
+                : "text-text-secondary hover:text-text-primary"
+            )}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         <div className="relative w-full sm:flex-1 sm:min-w-48">
