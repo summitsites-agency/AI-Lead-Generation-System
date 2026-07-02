@@ -34,6 +34,7 @@ export default function ScraperPage() {
   const [industry, setIndustry] = useState("");
   const [location, setLocation] = useState("");
   const [limit, setLimit] = useState(30);
+  const [facebook, setFacebook] = useState(false);
   const [importText, setImportText] = useState("");
 
   const [running, setRunning] = useState(false);
@@ -80,7 +81,7 @@ export default function ScraperPage() {
 
     const body =
       mode === "discover"
-        ? { mode, industry, location, limit }
+        ? { mode, industry, location, limit, facebook }
         : { mode, importText };
 
     try {
@@ -194,6 +195,16 @@ export default function ScraperPage() {
                   className="w-full accent-[var(--primary)]"
                 />
               </Field>
+              <label className="flex items-center gap-2 text-xs text-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={facebook}
+                  onChange={(e) => setFacebook(e.target.checked)}
+                  disabled={running}
+                  className="accent-[var(--primary)]"
+                />
+                Also search Facebook (finds pages with no real website)
+              </label>
             </div>
           ) : (
             <Field label="URLs (one per line) or CSV" icon={<Upload size={14} />}>
