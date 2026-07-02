@@ -160,6 +160,7 @@ function DrawerBody({
   const isRealSite = lead.web_presence === "site";
   const hasLink = lead.website.startsWith("http");
   const ig = lead.meta?.instagram;
+  const fb = lead.meta?.facebook;
   const igHandle =
     lead.source === "instagram" ? lead.website.replace(/\/+$/, "").split("/").pop() ?? "" : "";
   const [reanalyzing, setReanalyzing] = useState(false);
@@ -226,6 +227,41 @@ function DrawerBody({
       </div>
 
       <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
+        {/* Facebook page card */}
+        {fb && (
+          <section className="space-y-2">
+            <SectionTitle icon={<ExternalLink size={14} />}>Facebook page</SectionTitle>
+            <div className="rounded-xl border border-border bg-surface-2 p-4">
+              <div className="truncate font-semibold">{lead.name}</div>
+              {fb.category && (
+                <div className="text-xs text-text-muted">{fb.category}</div>
+              )}
+              <div className="mt-3 text-sm">
+                {fb.website ? (
+                  <a
+                    href={fb.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 break-all text-primary hover:underline"
+                  >
+                    <ExternalLink size={12} className="shrink-0" /> {fb.website}
+                  </a>
+                ) : (
+                  <span className="text-warning">No website — prime new-build lead</span>
+                )}
+              </div>
+              <a
+                href={lead.website}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border-strong bg-fill px-3 py-1.5 text-xs font-medium hover:bg-fill-strong"
+              >
+                <ExternalLink size={13} /> Open on Facebook
+              </a>
+            </div>
+          </section>
+        )}
+
         {/* Instagram preview card */}
         {ig && (
           <section className="space-y-2">
